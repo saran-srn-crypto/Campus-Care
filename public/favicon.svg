@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="420" height="420" viewBox="0 0 420 420" role="img" aria-labelledby="title desc">
+  <title id="title">Campus Care Logo</title>
+  <desc id="desc">Circular campus care ticket escalation system logo with people, tickets, and upward arrow.</desc>
+  <defs>
+    <linearGradient id="campusCareGradient" x1="86" y1="334" x2="332" y2="78" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#163d81"/>
+      <stop offset="0.48" stop-color="#1e9bb3"/>
+      <stop offset="1" stop-color="#7ad878"/>
+    </linearGradient>
+    <linearGradient id="campusCareArrow" x1="134" y1="286" x2="328" y2="104" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#16579b"/>
+      <stop offset="1" stop-color="#6edb80"/>
+    </linearGradient>
+  </defs>
+  <rect width="420" height="420" fill="#ffffff"/>
+  <circle cx="210" cy="199" r="128" fill="none" stroke="url(#campusCareGradient)" stroke-width="24"/>
+  <path d="M91 240c-12-76 32-151 104-178" fill="none" stroke="#163d81" stroke-width="20" stroke-linecap="round"/>
+  <path d="M234 64c68 13 116 73 116 143" fill="none" stroke="#6bd47a" stroke-width="20" stroke-linecap="round"/>
+  <path d="M210 78v65c0 8-6 14-14 14h-14v64h61v-64h-16c-8 0-14-6-14-14V78" fill="none" stroke="#1f8ca8" stroke-width="16" stroke-linejoin="round"/>
+  <path d="M122 265l62-58 36 37 84-102-25-19 72-31-23 77-20-16-86 106-39-39-45 44z" fill="url(#campusCareArrow)" stroke="#ffffff" stroke-width="9" stroke-linejoin="round"/>
+  <g fill="#ffffff" stroke="#1a6fa4" stroke-width="9" stroke-linejoin="round">
+    <path d="M125 181h44v33h-20l-19 18v-18h-5z"/>
+    <path d="M182 152h50v38h-23l-22 20v-20h-5z"/>
+  </g>
+  <g fill="#ffffff" stroke="#16608d" stroke-width="10">
+    <circle cx="160" cy="280" r="24"/>
+    <circle cx="211" cy="272" r="27"/>
+    <circle cx="265" cy="280" r="24"/>
+    <path d="M113 351c7-34 24-52 48-52s41 18 48 52"/>
+    <path d="M164 351c7-39 24-59 48-59s41 20 48 59"/>
+    <path d="M218 351c7-34 24-52 48-52s41 18 48 52"/>
+  </g>
+  <g stroke="#1e9bb3" stroke-width="10" stroke-linecap="round">
+    <path d="M330 74l11-22"/>
+    <path d="M355 103l24-7"/>
+    <path d="M354 135l24 11"/>
+  </g>
+</svg>
