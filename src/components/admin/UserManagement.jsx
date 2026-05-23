@@ -4,7 +4,7 @@ import { useNotifications } from '../../hooks/useNotifications';
 import Button from '../common/Button';
 
 export default function UserManagement() {
-  const { state, addUser, toggleUserStatus } = useTickets();
+  const { state, addUser, toggleUserStatus, removeUser } = useTickets();
   const { showToast } = useNotifications();
   const [form, setForm] = useState({
     name: '',
@@ -85,12 +85,17 @@ export default function UserManagement() {
       </form>
       <div className="grid gap-2.5">
         {state.users.map((u, i) => (
-          <article key={i} className="p-3.5 grid grid-cols-[1.2fr_0.8fr_0.8fr_1fr_auto] gap-3 items-center border border-line rounded-lg bg-white">
+          <article key={i} className="p-3.5 grid grid-cols-[1.2fr_0.8fr_0.8fr_1fr_auto_auto] gap-3 items-center border border-line rounded-lg bg-white">
             <strong>{u.name}</strong>
             <code className="bg-surface-soft px-2 py-1 rounded text-sm font-semibold justify-self-start">{u.userId}</code>
             <span className="capitalize">{u.role}</span>
             <span>{u.department}</span>
             <button onClick={() => { toggleUserStatus(i); showToast('User status updated.'); }} className="min-h-[40px] rounded-lg border border-line bg-transparent text-[#344054] px-3.5 py-2 font-extrabold">{u.status}</button>
+            <button onClick={() => { 
+              if (window.confirm('Are you sure you want to remove this user?')) { 
+                removeUser(u.userId).then(() => showToast('User removed.')).catch(() => showToast('Failed to remove user.'));
+              } 
+            }} className="min-h-[40px] rounded-lg border border-red-200 bg-red-50 text-red-600 px-3.5 py-2 font-extrabold hover:bg-red-100">Remove</button>
           </article>
         ))}
       </div>

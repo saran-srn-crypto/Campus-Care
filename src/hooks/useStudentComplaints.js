@@ -60,9 +60,11 @@ export function useStudentComplaints(params) {
 
   useEffect(() => {
     let cancelled = false;
-    async function load() {
-      setLoading(true);
-      setError('');
+    async function load(isSilent = false) {
+      if (!isSilent) {
+        setLoading(true);
+        setError('');
+      }
       try {
         const data = await studentComplaintService.fetchComplaints(params);
         if (cancelled) return;
@@ -70,18 +72,31 @@ export function useStudentComplaints(params) {
         setComplaints(normalized.complaints);
         setMeta(normalized.meta);
         setStatusCounts(normalized.statusCounts);
+        if (isSilent) setError('');
       } catch (err) {
         if (cancelled) return;
-        setComplaints([]);
-        setMeta({ ...EMPTY_META, page, size });
-        setStatusCounts({});
-        setError(err.message || 'Unable to load complaints.');
+        if (!isSilent) {
+          setComplaints([]);
+          setMeta({ ...EMPTY_META, page, size });
+          setStatusCounts({});
+          setError(err.message || 'Unable to load complaints.');
+        }
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled && !isSilent) {
+          setLoading(false);
+        }
       }
     }
-    load();
-    return () => { cancelled = true; };
+    load(false);
+
+    const interval = setInterval(() => {
+      load(true);
+    }, 5000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, [queryKey, reloadKey, page, size]);
 
   return {

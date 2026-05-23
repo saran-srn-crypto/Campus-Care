@@ -1,7 +1,7 @@
 import { SEED_DATA } from '../utils/constants';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
-const USE_MOCK = true; // Set to false to connect to the backend microservices again
+const USE_MOCK = false; // Set to false to connect to the backend microservices again
 
 /* ─── Client-side In-memory Mock Database for Disconnected Mode ─── */
 let mockTickets = [...(SEED_DATA?.tickets || [])];
@@ -45,22 +45,34 @@ function simulateRequest(method, originalPath, body = null, isBlob = false) {
   if (path === '/api/auth/login' && method === 'POST') {
     const { email, role: requestedRole } = body;
     let matchedUser = mockUsers.find(u => u.userId === email || u.email === email);
+    
+    let targetRole = requestedRole ? requestedRole.toLowerCase() : 'user';
+    if (targetRole === 'user') {
+      if (matchedUser) {
+        targetRole = matchedUser.role.toLowerCase();
+      } else if (email === '717823s146' || email.includes('admin')) {
+        targetRole = 'admin';
+      } else {
+        targetRole = 'student';
+      }
+    }
+
     if (!matchedUser) {
       if (email === '717823s146') {
-        matchedUser = { ...mockUsers[3], role: requestedRole.toLowerCase() };
+        matchedUser = { ...mockUsers[3], role: targetRole };
       } else {
         matchedUser = {
           userId: email,
           name: email.split('@')[0] || email,
           email: email.includes('@') ? email : `${email}@kce.ac.in`,
-          role: requestedRole.toLowerCase(),
+          role: targetRole,
           department: 'Computer Science',
           phone: '9876543210',
           status: 'Active'
         };
       }
     } else {
-      matchedUser = { ...matchedUser, role: requestedRole.toLowerCase() };
+      matchedUser = { ...matchedUser, role: targetRole };
     }
     currentUser = matchedUser;
     
@@ -317,6 +329,21 @@ function simulateRequest(method, originalPath, body = null, isBlob = false) {
       user.status = user.status === 'Active' ? 'Inactive' : 'Active';
     }
     return user;
+  }
+
+  // Delete admin user
+  if (path.startsWith('/api/admin/users/') && method === 'DELETE') {
+    const userId = path.split('/')[4];
+    const idx = mockUsers.findIndex(u => u.userId === userId);
+    if (idx >= 0) {
+      mockUsers.splice(idx, 1);
+    }
+    return { message: "User deleted successfully" };
+  }
+
+  // Get staff members list
+  if (path === '/api/auth/staff' && method === 'GET') {
+    return mockUsers.filter(u => u.role === 'staff');
   }
 
   // Download reports PDF

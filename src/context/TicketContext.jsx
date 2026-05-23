@@ -5,14 +5,13 @@ import { useAuth } from '../hooks/useAuth';
 const TicketContext = createContext(null);
 
 const DEFAULT_CATEGORIES = ['Hostel', 'Infrastructure', 'IT Services', 'Academic', 'Administrative'];
-const DEFAULT_STAFF_MEMBERS = ['Meera Nair', 'Karthik Rao', 'Anita Paul', 'Dinesh Kumar'];
 
 export function TicketProvider({ children }) {
   const { isLoggedIn, role } = useAuth();
   const [state, setStateRaw] = useState({
     tickets: [],
     categories: DEFAULT_CATEGORIES,
-    staffMembers: DEFAULT_STAFF_MEMBERS,
+    staffMembers: [],
     users: [],
     selectedTicketId: null,
     filters: { status: 'All', priority: 'All', search: '', staffStatus: 'All', staffPriority: 'All', staffCategory: 'All' }
@@ -27,44 +26,62 @@ export function TicketProvider({ children }) {
 
   const fetchTicketsAndMetadata = useCallback(async () => {
     if (!isLoggedIn) return;
+
+    let ticketsData = [];
     try {
-      const ticketsData = await api.get('/api/tickets');
-      
-      let categoriesData = [];
-      let usersData = [];
-      
-      if (role === 'admin') {
-        try {
-          categoriesData = await api.get('/api/admin/categories');
-          usersData = await api.get('/api/admin/users');
-        } catch (e) {
-          console.error("Admin fetch error", e);
-        }
-      }
-
-      const categoryNames = categoriesData.length > 0
-        ? categoriesData.map(c => c.name)
-        : DEFAULT_CATEGORIES;
-
-      setStateRaw(prev => {
-        const newTickets = ticketsData || [];
-        // Keep selected ticket if it still exists in the new list, otherwise default to first ticket
-        let nextSelectedId = prev.selectedTicketId;
-        if (!nextSelectedId || !newTickets.some(t => t.id === nextSelectedId)) {
-          nextSelectedId = newTickets[0]?.id || null;
-        }
-
-        return {
-          ...prev,
-          tickets: newTickets,
-          categories: categoryNames,
-          users: usersData || [],
-          selectedTicketId: nextSelectedId
-        };
-      });
+      ticketsData = await api.get('/api/tickets');
     } catch (error) {
       console.error("Error fetching tickets", error);
     }
+    
+    let categoriesData = [];
+    let usersData = [];
+    if (role === 'admin') {
+      try {
+        categoriesData = await api.get('/api/admin/categories');
+      } catch (e) {
+        console.error("Admin fetch categories error", e);
+      }
+      try {
+        usersData = await api.get('/api/admin/users');
+      } catch (e) {
+        console.error("Admin fetch users error", e);
+      }
+    }
+
+    let staffList = [];
+    try {
+      const staffData = await api.get('/api/auth/staff');
+      if (staffData && staffData.length > 0) {
+        staffList = staffData
+          .filter(s => s.status && s.status.toLowerCase() === 'active')
+          .map(s => s.name);
+      }
+    } catch (e) {
+      console.error("Staff fetch error", e);
+    }
+
+    const categoryNames = categoriesData.length > 0
+      ? categoriesData.map(c => c.name)
+      : DEFAULT_CATEGORIES;
+
+    setStateRaw(prev => {
+      const newTickets = ticketsData || [];
+      // Keep selected ticket if it still exists in the new list, otherwise default to first ticket
+      let nextSelectedId = prev.selectedTicketId;
+      if (!nextSelectedId || !newTickets.some(t => t.id === nextSelectedId)) {
+        nextSelectedId = newTickets[0]?.id || null;
+      }
+
+      return {
+        ...prev,
+        tickets: newTickets,
+        categories: categoryNames,
+        users: usersData || [],
+        staffMembers: staffList,
+        selectedTicketId: nextSelectedId
+      };
+    });
   }, [isLoggedIn, role]);
 
   useEffect(() => {
@@ -76,7 +93,7 @@ export function TicketProvider({ children }) {
       setStateRaw({
         tickets: [],
         categories: DEFAULT_CATEGORIES,
-        staffMembers: DEFAULT_STAFF_MEMBERS,
+        staffMembers: [],
         users: [],
         selectedTicketId: null,
         filters: { status: 'All', priority: 'All', search: '', staffStatus: 'All', staffPriority: 'All', staffCategory: 'All' }
@@ -219,6 +236,17 @@ export function TicketProvider({ children }) {
     }
   }, [state.users, fetchTicketsAndMetadata]);
 
+  const removeUser = useCallback(async (userId) => {
+    try {
+      if (!userId) return;
+      await api.delete(`/api/admin/users/${userId}`);
+      await fetchTicketsAndMetadata();
+    } catch (e) {
+      console.error(e);
+      throw e;
+    }
+  }, [fetchTicketsAndMetadata]);
+
   const addCategory = useCallback(async (category) => {
     try {
       await api.post('/api/admin/categories', { name: category });
@@ -253,7 +281,7 @@ export function TicketProvider({ children }) {
     <TicketContext.Provider value={{
       state, updateState, resetState,
       addTicket, updateTicket, addComment, addTimelineEntry,
-      setSelectedTicket, setFilters, addUser, toggleUserStatus, addCategory,
+      setSelectedTicket, setFilters, addUser, toggleUserStatus, removeUser, addCategory,
       getSelectedTicket, exportPdfReport
     }}>
       {children}

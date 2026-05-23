@@ -2,6 +2,7 @@ import React from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import StatCard from './StatCard';
 import { Ticket, Clock, CheckCircle, AlertTriangle } from 'lucide-react';
+import { getStats } from '../../utils/helpers';
 
 const cardConfig = [
   {
@@ -42,9 +43,13 @@ const cardConfig = [
   },
 ];
 
-export default function StatsGrid({ stats }) {
+export default function StatsGrid({ stats, tickets }) {
   const { role } = useAuth();
   const baseRoute = role === 'student' ? '/student/tickets' : '/dashboard/tickets';
+
+  // If tickets are provided, compute stats on the fly
+  const derivedStats = tickets ? getStats(tickets) : {};
+  const data = stats || derivedStats;
 
   return (
     <section className="grid grid-cols-2 lg:grid-cols-4 gap-4" aria-label="Ticket statistics">
@@ -52,7 +57,7 @@ export default function StatsGrid({ stats }) {
         <StatCard
           key={c.key}
           label={c.label}
-          count={stats[c.key]}
+          count={data[c.key]}
           icon={c.icon}
           color={c.color}
           bgColor={c.bgColor}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTickets } from '../../hooks/useTickets';
 import { getStats } from '../../utils/helpers';
@@ -11,7 +11,7 @@ import StatusBadge from '../common/StatusBadge';
 import Timeline from '../common/Timeline';
 import {
   ShieldCheck, ArrowRight, Ticket, ChevronDown, ChevronUp,
-  Eye, MapPin, User, Calendar, Clock, FileText, ImagePlus,
+  MapPin, User, Calendar, Clock, FileText, ImagePlus,
 } from 'lucide-react';
 
 export default function AdminDashboard() {
@@ -101,70 +101,49 @@ export default function AdminDashboard() {
                 {/* Expanded detail */}
                 {isExpanded && expandedTicket && (
                   <div className="px-5 pb-5 pt-1 bg-[#f8faff] border-t border-[#e2e8f0] animate-[fadeIn_0.2s_ease-out]">
-                    <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-4 items-start">
-                      {/* Detail content */}
-                      <div className="grid gap-4">
-                        {/* Description */}
+                    {/* Detail content */}
+                    <div className="grid gap-4 mt-3">
+                      {/* Description */}
+                      <div>
+                        <h4 className="m-0 mb-1 text-xs font-bold uppercase text-muted flex items-center gap-1.5"><FileText size={12} /> Description</h4>
+                        <p className="m-0 text-sm leading-relaxed">{expandedTicket.description}</p>
+                      </div>
+
+                      {/* Info chips */}
+                      <div className="flex flex-wrap gap-2">
+                        <StatusBadge value={expandedTicket.category} />
+                        <StatusBadge value={expandedTicket.department} />
+                        <StatusBadge value={`Assigned: ${expandedTicket.assignee || 'Not assigned'}`} />
+                      </div>
+
+                      {/* Student Attachments */}
+                      {expandedTicket.attachments && expandedTicket.attachments.length > 0 && (
                         <div>
-                          <h4 className="m-0 mb-1 text-xs font-bold uppercase text-muted flex items-center gap-1.5"><FileText size={12} /> Description</h4>
-                          <p className="m-0 text-sm leading-relaxed">{expandedTicket.description}</p>
-                        </div>
-
-                        {/* Info chips */}
-                        <div className="flex flex-wrap gap-2">
-                          <StatusBadge value={expandedTicket.category} />
-                          <StatusBadge value={expandedTicket.department} />
-                          <StatusBadge value={`Assigned: ${expandedTicket.assignee || 'Not assigned'}`} />
-                        </div>
-
-                        {/* Student Attachments */}
-                        {expandedTicket.attachments && expandedTicket.attachments.length > 0 && (
-                          <div>
-                            <h4 className="m-0 mb-2 text-xs font-bold uppercase text-muted flex items-center gap-1.5"><ImagePlus size={12} /> Student Attachments</h4>
-                            <div className="flex flex-wrap gap-2.5">
-                              {expandedTicket.attachments.map((att, idx) => {
-                                const isBase64 = att && att.startsWith('data:');
-                                return (
-                                  <div key={idx} className="p-1.5 rounded-lg bg-white border border-line">
-                                    {isBase64 ? (
-                                      <img src={att} alt={`Attachment ${idx + 1}`} className="rounded max-h-28 max-w-[160px] object-cover" />
-                                    ) : (
-                                      <div className="flex items-center gap-1.5 px-3 py-2 text-xs text-muted font-bold">📁 {att}</div>
-                                    )}
-                                  </div>
-                                );
-                              })}
-                            </div>
+                          <h4 className="m-0 mb-2 text-xs font-bold uppercase text-muted flex items-center gap-1.5"><ImagePlus size={12} /> Student Attachments</h4>
+                          <div className="flex flex-wrap gap-2.5">
+                            {expandedTicket.attachments.map((att, idx) => {
+                              const isBase64 = att && att.startsWith('data:');
+                              return (
+                                <div key={idx} className="p-1.5 rounded-lg bg-white border border-line">
+                                  {isBase64 ? (
+                                    <img src={att} alt={`Attachment ${idx + 1}`} className="rounded max-h-28 max-w-[160px] object-cover" />
+                                  ) : (
+                                    <div className="flex items-center gap-1.5 px-3 py-2 text-xs text-muted font-bold">📁 {att}</div>
+                                  )}
+                                </div>
+                              );
+                            })}
                           </div>
-                        )}
+                        </div>
+                      )}
 
-                        {/* Timeline summary */}
-                        {expandedTicket.timeline && expandedTicket.timeline.length > 0 && (
-                          <div>
-                            <h4 className="m-0 mb-2 text-xs font-bold uppercase text-muted flex items-center gap-1.5"><Clock size={12} /> Timeline</h4>
-                            <Timeline items={expandedTicket.timeline} />
-                          </div>
-                        )}
-                      </div>
-
-                      {/* More Details button */}
-                      <div className="flex flex-col gap-2.5 items-stretch flex-shrink-0">
-                        <button
-                          onClick={() => navigate(`/dashboard/admin/controls?ticket=${expandedTicket.id}`)}
-                          className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-[#1f57c3] to-[#6366f1] text-white text-sm font-bold shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-200 whitespace-nowrap"
-                        >
-                          <ShieldCheck size={16} />
-                          More Details
-                          <ArrowRight size={14} />
-                        </button>
-                        <button
-                          onClick={() => navigate(`/dashboard/admin/controls?ticket=${expandedTicket.id}`)}
-                          className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg border border-[#c7d2fe] bg-[#eef2ff] text-[#4338ca] text-xs font-bold hover:bg-[#e0e7ff] transition-colors whitespace-nowrap"
-                        >
-                          <Eye size={13} />
-                          Open Admin Controls
-                        </button>
-                      </div>
+                      {/* Timeline summary */}
+                      {expandedTicket.timeline && expandedTicket.timeline.length > 0 && (
+                        <div>
+                          <h4 className="m-0 mb-2 text-xs font-bold uppercase text-muted flex items-center gap-1.5"><Clock size={12} /> Timeline</h4>
+                          <Timeline items={expandedTicket.timeline} />
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
