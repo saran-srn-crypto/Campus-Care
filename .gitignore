@@ -1,0 +1,19 @@
+# Target directories (compilation build artifacts)
+**/target/
+target/
+
+# IDE files and workspace settings
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+.metadata/
+
+# Log files
+*.log
+*.err.log
+
+# System files
+.DS_Store
+Thumbs.db
