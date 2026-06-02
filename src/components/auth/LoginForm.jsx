@@ -12,8 +12,8 @@ const portals = [
 
 export default function LoginForm() {
   const [role, setRole] = useState('user');
-  const [email, setEmail] = useState('717823s146');
-  const [password, setPassword] = useState('123456');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const { login } = useAuth();
   const { showToast } = useNotifications();
   const navigate = useNavigate();

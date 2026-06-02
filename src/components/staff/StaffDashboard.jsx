@@ -33,13 +33,11 @@ export default function StaffDashboard() {
   }, [staffTickets, state.filters.staffStatus, state.filters.staffPriority, state.filters.staffCategory]);
 
   React.useEffect(() => {
-    if (filteredTickets.length > 0) {
+    if (filteredTickets.length > 0 && state.selectedTicketId !== null) {
       const hasSelected = filteredTickets.some(t => t.id === state.selectedTicketId);
       if (!hasSelected) {
-        setSelectedTicket(filteredTickets[0].id);
+        setSelectedTicket(null);
       }
-    } else if (state.selectedTicketId !== null) {
-      setSelectedTicket(null);
     }
   }, [filteredTickets, state.selectedTicketId, setSelectedTicket]);
 

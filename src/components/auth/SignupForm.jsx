@@ -105,23 +105,7 @@ export default function SignupForm() {
       <div className="grid gap-2">
         <span className="text-sidebar-label text-xs font-bold uppercase tracking-wide">Official registration</span>
         <h1 id="signupTitle" className="m-0 text-[clamp(1.8rem,4vw,2.6rem)] leading-tight">Create your CampusCare account</h1>
-        <p className="m-0 text-muted leading-relaxed">Choose your role below — the form fields will adapt to your profile type.</p>
-      </div>
-
-      {/* Role selector cards */}
-      <div className="grid grid-cols-3 gap-2.5" aria-label="Select your role">
-        {ROLE_CARDS.map(r => (
-          <button key={r.value} type="button" onClick={() => selectRole(r.value)}
-            className={`min-h-[88px] grid gap-1 p-3.5 text-left rounded-lg border transition-all
-              ${form.role === r.value
-                ? 'border-primary shadow-[0_0_0_3px_rgba(31,87,195,0.12)] bg-[#f0f5ff]'
-                : 'border-line bg-white hover:border-[#9ab1d5]'} text-ink`}
-          >
-            <span className={form.role === r.value ? 'text-primary' : 'text-muted'}>{r.icon}</span>
-            <strong className="text-sm">{r.label}</strong>
-            <span className="text-muted text-xs leading-relaxed">{r.desc}</span>
-          </button>
-        ))}
+        <p className="m-0 text-muted leading-relaxed">Fill in the details below to register your student account.</p>
       </div>
 
       {/* Dynamic form */}

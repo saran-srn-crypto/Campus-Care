@@ -49,9 +49,12 @@ function simulateRequest(method, originalPath, body = null, isBlob = false) {
     let targetRole = requestedRole ? requestedRole.toLowerCase() : 'user';
     if (targetRole === 'user') {
       if (matchedUser) {
+        if (matchedUser.role.toLowerCase() === 'admin') {
+          throw new Error("Admin logins are only permitted through the Admin Portal.");
+        }
         targetRole = matchedUser.role.toLowerCase();
-      } else if (email === '717823s146' || email.includes('admin')) {
-        targetRole = 'admin';
+      } else if (email === '717823s146' || email.toLowerCase().includes('admin')) {
+        throw new Error("Admin logins are only permitted through the Admin Portal.");
       } else {
         targetRole = 'student';
       }
@@ -321,6 +324,29 @@ function simulateRequest(method, originalPath, body = null, isBlob = false) {
     return newUser;
   }
 
+  // Batch upload users via Excel
+  if (path === '/api/admin/users/upload' && method === 'POST') {
+    const mockImported = [
+      { userId: 'STU-990', name: 'Albus Dumbledore', email: 'albus@kce.ac.in', role: 'student', department: 'Gryffindor', phone: '9901234567', status: 'Active' },
+      { userId: 'EMP-991', name: 'Severus Snape', email: 'severus@kce.ac.in', role: 'staff', department: 'Potions', phone: '9911234567', status: 'Active' },
+      { userId: 'WRD-992', name: 'Minerva McGonagall', email: 'minerva@kce.ac.in', role: 'warden', department: 'Hostel Block G', phone: '9921234567', status: 'Active' }
+    ];
+    const addedCount = mockImported.filter(imp => {
+      if (!mockUsers.some(u => u.userId === imp.userId)) {
+        mockUsers.push(imp);
+        return true;
+      }
+      return false;
+    }).length;
+
+    return {
+      message: "Excel import completed successfully (Mock Mode).",
+      importedCount: addedCount,
+      skippedCount: mockImported.length - addedCount,
+      skippedUserIds: mockImported.filter(imp => mockUsers.some(u => u.userId === imp.userId)).map(u => u.userId)
+    };
+  }
+
   // Toggle user status
   if (path.startsWith('/api/admin/users/') && path.endsWith('/toggle') && method === 'POST') {
     const userId = path.split('/')[4];
@@ -339,6 +365,22 @@ function simulateRequest(method, originalPath, body = null, isBlob = false) {
       mockUsers.splice(idx, 1);
     }
     return { message: "User deleted successfully" };
+  }
+
+  // Update admin user
+  if (path.startsWith('/api/admin/users/') && method === 'PUT') {
+    const userId = path.split('/')[4];
+    const user = mockUsers.find(u => u.userId === userId);
+    if (user) {
+      if (body.email) user.email = body.email;
+      if (body.name) user.name = body.name;
+      if (body.role) user.role = body.role.toLowerCase();
+      if (body.department) user.department = body.department;
+      if (body.phone) user.phone = body.phone;
+      if (body.status) user.status = body.status;
+      if (body.password) user.password = body.password;
+    }
+    return user;
   }
 
   // Get staff members list
@@ -384,9 +426,13 @@ function simulateRequest(method, originalPath, body = null, isBlob = false) {
 async function request(method, path, body = null, isBlob = false) {
   if (USE_MOCK) {
     // Return mock data immediately after a tiny 150ms delay to simulate network latency
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       setTimeout(() => {
-        resolve(simulateRequest(method, path, body, isBlob));
+        try {
+          resolve(simulateRequest(method, path, body, isBlob));
+        } catch (e) {
+          reject(e);
+        }
       }, 150);
     });
   }

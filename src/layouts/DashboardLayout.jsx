@@ -10,6 +10,7 @@ import ProfileSettingsForm from '../components/student/ProfileSettingsForm';
 import logo from '../assets/logos/campus-care-logo.svg';
 import {
   User,
+  Users,
   LayoutDashboard,
   RotateCcw,
   LogOut,
@@ -82,6 +83,7 @@ export default function DashboardLayout() {
     if (location.pathname.includes('/complaints')) return ['All Complaints', 'Ticket management'];
     if (location.pathname.includes('/analytics')) return ['Analytics', 'Service intelligence'];
     if (location.pathname.includes('/admin/controls')) return ['Administrative Controls', 'Master controls'];
+    if (location.pathname.includes('/admin/users')) return ['User Management', 'Directory management'];
     return ROLE_META[role] || ROLE_META.student;
   }, [location.pathname, role, view]);
 
@@ -100,13 +102,14 @@ export default function DashboardLayout() {
   const isOnComplaints = location.pathname.includes('/complaints');
   const isOnAnalytics = location.pathname.includes('/analytics');
   const isOnAdminControls = location.pathname.includes('/admin/controls');
-  const isOnDashboard = !isOnComplaints && !isOnAnalytics && !isOnAdminControls;
+  const isOnAdminUsers = location.pathname.includes('/admin/users');
+  const isOnDashboard = !isOnComplaints && !isOnAnalytics && !isOnAdminControls && !isOnAdminUsers;
   const accountActive = showAccountPanel || location.pathname === '/student/profile';
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] min-h-screen">
       <aside className="bg-sidebar text-[#f8fafc] p-4 lg:p-6 flex flex-col gap-4 lg:gap-7" aria-label="Primary navigation">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 cursor-pointer select-none" onClick={() => { setView('dashboard'); navigate(role === 'student' ? '/student/dashboard' : `/dashboard/${role}`); }} title="Go to Dashboard">
           <img src={logo} alt="Campus Care logo" className="w-13 h-13 rounded-lg object-contain bg-white flex-shrink-0" />
           <div>
             <strong className="block">CampusCare</strong>
@@ -180,16 +183,28 @@ export default function DashboardLayout() {
                 <span>Analytics</span>
               </button>
               {role === 'admin' && (
-                <button
-                  onClick={() => { setView('dashboard'); navigate('/dashboard/admin/controls'); }}
-                  className={[
-                    'w-full min-h-[44px] px-3 py-2.5 border rounded-lg text-left transition-colors flex items-center gap-2.5',
-                    isOnAdminControls ? 'bg-sidebar-hover border-sidebar-border text-white' : 'bg-transparent border-transparent text-[#dbe5f4] hover:bg-sidebar-hover/40',
-                  ].join(' ')}
-                >
-                  <ShieldCheck size={18} />
-                  <span>Admin Controls</span>
-                </button>
+                <>
+                  <button
+                    onClick={() => { setView('dashboard'); navigate('/dashboard/admin/users'); }}
+                    className={[
+                      'w-full min-h-[44px] px-3 py-2.5 border rounded-lg text-left transition-colors flex items-center gap-2.5',
+                      isOnAdminUsers ? 'bg-sidebar-hover border-sidebar-border text-white' : 'bg-transparent border-transparent text-[#dbe5f4] hover:bg-sidebar-hover/40',
+                    ].join(' ')}
+                  >
+                    <Users size={18} />
+                    <span>User Management</span>
+                  </button>
+                  <button
+                    onClick={() => { setView('dashboard'); navigate('/dashboard/admin/controls'); }}
+                    className={[
+                      'w-full min-h-[44px] px-3 py-2.5 border rounded-lg text-left transition-colors flex items-center gap-2.5',
+                      isOnAdminControls ? 'bg-sidebar-hover border-sidebar-border text-white' : 'bg-transparent border-transparent text-[#dbe5f4] hover:bg-sidebar-hover/40',
+                    ].join(' ')}
+                  >
+                    <ShieldCheck size={18} />
+                    <span>Admin Controls</span>
+                  </button>
+                </>
               )}
             </nav>
           </>

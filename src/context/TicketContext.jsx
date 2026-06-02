@@ -67,10 +67,9 @@ export function TicketProvider({ children }) {
 
     setStateRaw(prev => {
       const newTickets = ticketsData || [];
-      // Keep selected ticket if it still exists in the new list, otherwise default to first ticket
       let nextSelectedId = prev.selectedTicketId;
-      if (!nextSelectedId || !newTickets.some(t => t.id === nextSelectedId)) {
-        nextSelectedId = newTickets[0]?.id || null;
+      if (nextSelectedId && !newTickets.some(t => t.id === nextSelectedId)) {
+        nextSelectedId = null;
       }
 
       return {
@@ -224,23 +223,62 @@ export function TicketProvider({ children }) {
     }
   }, [fetchTicketsAndMetadata]);
 
-  const toggleUserStatus = useCallback(async (index) => {
+  const toggleUserStatus = useCallback(async (userId) => {
     try {
-      const user = state.users[index];
-      if (!user) return;
-      await api.post(`/api/admin/users/${user.userId}/toggle`);
+      if (!userId) return;
+      await api.post(`/api/admin/users/${userId}/toggle`);
       await fetchTicketsAndMetadata();
     } catch (e) {
       console.error(e);
       throw e;
     }
-  }, [state.users, fetchTicketsAndMetadata]);
+  }, [fetchTicketsAndMetadata]);
 
   const removeUser = useCallback(async (userId) => {
     try {
       if (!userId) return;
       await api.delete(`/api/admin/users/${userId}`);
       await fetchTicketsAndMetadata();
+    } catch (e) {
+      console.error(e);
+      throw e;
+    }
+  }, [fetchTicketsAndMetadata]);
+
+  const updateUser = useCallback(async (userId, userForm) => {
+    try {
+      let mappedRole = 'student';
+      const roleLower = userForm.role.toLowerCase();
+      if (roleLower.includes('staff') || roleLower.includes('tech')) mappedRole = 'staff';
+      else if (roleLower.includes('warden')) mappedRole = 'warden';
+      else if (roleLower.includes('admin')) mappedRole = 'admin';
+
+      const payload = {
+        userId: userForm.userId,
+        email: userForm.email,
+        password: userForm.password,
+        role: mappedRole,
+        name: userForm.name,
+        department: userForm.department,
+        phone: userForm.phone
+      };
+
+      await api.put(`/api/admin/users/${userId}`, payload);
+      await fetchTicketsAndMetadata();
+    } catch (e) {
+      console.error(e);
+      throw e;
+    }
+  }, [fetchTicketsAndMetadata]);
+
+  const uploadUserExcel = useCallback(async (file) => {
+    try {
+      if (!file) return;
+      const formData = new FormData();
+      formData.append('file', file);
+      const response = await api.post('/api/admin/users/upload', formData);
+      await fetchTicketsAndMetadata();
+      return response;
     } catch (e) {
       console.error(e);
       throw e;
@@ -274,14 +312,15 @@ export function TicketProvider({ children }) {
   }, []);
 
   const getSelectedTicket = useCallback(() => {
-    return state.tickets.find(t => t.id === state.selectedTicketId) || state.tickets[0];
+    if (!state.selectedTicketId) return null;
+    return state.tickets.find(t => t.id === state.selectedTicketId) || null;
   }, [state.tickets, state.selectedTicketId]);
 
   return (
     <TicketContext.Provider value={{
       state, updateState, resetState,
       addTicket, updateTicket, addComment, addTimelineEntry,
-      setSelectedTicket, setFilters, addUser, toggleUserStatus, removeUser, addCategory,
+      setSelectedTicket, setFilters, addUser, toggleUserStatus, removeUser, updateUser, uploadUserExcel, addCategory,
       getSelectedTicket, exportPdfReport
     }}>
       {children}

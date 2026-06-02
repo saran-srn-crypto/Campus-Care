@@ -18,19 +18,20 @@ export default function ClosureApproval({ ticket }) {
   return (
     <div className="grid gap-3 border-t border-line pt-3 mt-3">
       <h3 className="m-0 text-sm font-bold text-ink">Warden Closure Verification</h3>
-      {ticket.proofImage ? (
+      {ticket.proofImage && (
         <div className="grid gap-2">
           <span className="text-xs text-muted font-semibold">Proof of Completion:</span>
           <img src={ticket.proofImage} alt="Completion proof upload" className="rounded-lg max-h-48 object-cover border border-line bg-surface-soft shadow-sm" />
-          {ticket.resolutionNotes && (
-            <div className="p-2.5 rounded bg-surface-soft border border-line text-sm">
-              <strong className="block text-xs uppercase text-muted mb-1">Technician Notes:</strong>
-              {ticket.resolutionNotes}
-            </div>
-          )}
         </div>
-      ) : (
-        <span className="text-xs text-muted italic">Technician has not uploaded any completion image yet.</span>
+      )}
+      {ticket.resolutionNotes && (
+        <div className="p-2.5 rounded bg-surface-soft border border-line text-sm grid gap-1">
+          <strong className="block text-xs uppercase text-muted">Technician Notes:</strong>
+          <span className="text-[#344054]">{ticket.resolutionNotes}</span>
+        </div>
+      )}
+      {!ticket.proofImage && !ticket.resolutionNotes && (
+        <span className="text-xs text-muted italic">Technician has not uploaded any completion details yet.</span>
       )}
       <div className="flex gap-2.5">
         <Button variant="secondary" onClick={handleApprove} disabled={ticket.status === 'Closed'}>

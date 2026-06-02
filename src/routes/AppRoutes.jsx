@@ -13,6 +13,7 @@ import StaffPage from '../pages/StaffPage';
 import WardenPage from '../pages/WardenPage';
 import AdminPage from '../pages/AdminPage';
 import AdminControlsPage from '../pages/AdminControlsPage';
+import AdminUserManagementPage from '../pages/AdminUserManagementPage';
 import NotificationsPage from '../pages/NotificationsPage';
 import ComplaintsPage from '../pages/ComplaintsPage';
 import AnalyticsPage from '../pages/AnalyticsPage';
@@ -61,6 +62,7 @@ export default function AppRoutes() {
         <Route path="warden" element={<WardenPage />} />
         <Route path="admin" element={<AdminPage />} />
         <Route path="admin/controls" element={<ProtectedRoute allowedRoles={['admin']}><AdminControlsPage /></ProtectedRoute>} />
+        <Route path="admin/users" element={<ProtectedRoute allowedRoles={['admin']}><AdminUserManagementPage /></ProtectedRoute>} />
         <Route path="notifications" element={<NotificationsPage />} />
         <Route path="complaints" element={<ComplaintsPage />} />
         <Route path="analytics" element={<AnalyticsPage />} />

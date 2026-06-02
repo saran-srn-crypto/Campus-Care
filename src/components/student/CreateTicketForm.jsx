@@ -33,7 +33,6 @@ export default function CreateTicketForm({ ownerName }) {
     const next = {};
     if (form.title.trim().length < 5) next.title = 'Enter a clear issue title.';
     if (!form.category) next.category = 'Select a category.';
-    if (!form.priority) next.priority = 'Select a priority.';
     if (form.location.trim().length < 3) next.location = 'Add the affected location.';
     if (form.description.trim().length < 15) next.description = 'Add at least 15 characters of detail.';
     setErrors(next);
@@ -89,7 +88,7 @@ export default function CreateTicketForm({ ownerName }) {
     <article className="border border-line rounded-lg bg-white shadow-card overflow-hidden">
       <div className="p-5 border-b border-line">
         <h2 className="m-0">Raise New Complaint</h2>
-        <p className="mt-1 mb-0 text-muted">Create a ticket with category, priority, location, and supporting images.</p>
+        <p className="mt-1 mb-0 text-muted">Create a ticket with category, location, and supporting images.</p>
       </div>
 
       <form className="grid gap-5 p-5" onSubmit={handleSubmit} noValidate>
@@ -112,14 +111,6 @@ export default function CreateTicketForm({ ownerName }) {
               {state.categories.map(c => <option key={c}>{c}</option>)}
             </select>
             {errors.category && <span className="text-danger text-xs font-bold" role="alert">{errors.category}</span>}
-          </div>
-
-          <div className="grid gap-1.5">
-            <label htmlFor="ticketPriority" className="text-[#344054] text-sm font-bold">Priority</label>
-            <select id="ticketPriority" value={form.priority} onChange={set('priority')} className={inputCls} aria-invalid={!!errors.priority}>
-              {['Low', 'Medium', 'High', 'Urgent'].map(p => <option key={p}>{p}</option>)}
-            </select>
-            {errors.priority && <span className="text-danger text-xs font-bold" role="alert">{errors.priority}</span>}
           </div>
         </div>
 
