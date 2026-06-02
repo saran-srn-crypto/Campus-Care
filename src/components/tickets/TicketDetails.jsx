@@ -34,10 +34,9 @@ export default function TicketDetails({ ticket, actions }) {
         }`}
       />
 
-      {/* Sliding Drawer */}
       <section
-        className={`fixed top-0 right-0 h-screen w-[min(550px,100vw)] bg-white shadow-[0_0_50px_rgba(0,0,0,0.2)] z-[1000] flex flex-col transition-transform duration-300 ease-out border-l border-line ${
-          isOpen ? 'translate-x-0' : 'translate-x-full'
+        className={`fixed top-0 right-0 h-screen w-[min(550px,100vw)] bg-white shadow-[0_0_50px_rgba(0,0,0,0.2)] z-[1000] flex flex-col sliding-drawer border-l border-line ${
+          isOpen ? 'translate-x-0 visible' : 'translate-x-full invisible pointer-events-none'
         }`}
       >
         {/* Header */}

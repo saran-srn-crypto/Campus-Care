@@ -28,10 +28,9 @@ export default function NotificationPanel() {
         }`}
       />
 
-      {/* Sliding Drawer */}
       <section
-        className={`fixed top-0 right-0 h-screen w-[min(400px,100vw)] bg-white shadow-[0_0_40px_rgba(0,0,0,0.15)] z-[1000] flex flex-col transition-transform duration-300 ease-out border-l border-line ${
-          panelOpen ? 'translate-x-0' : 'translate-x-full'
+        className={`fixed top-0 right-0 h-screen w-[min(400px,100vw)] bg-white shadow-[0_0_40px_rgba(0,0,0,0.15)] z-[1000] flex flex-col sliding-drawer border-l border-line ${
+          panelOpen ? 'translate-x-0 visible' : 'translate-x-full invisible pointer-events-none'
         }`}
       >
         {/* Header */}

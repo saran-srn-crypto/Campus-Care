@@ -27,6 +27,11 @@
 
 * { box-sizing: border-box; }
 
+html, body, #root {
+  overflow-x: hidden;
+  width: 100%;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
@@ -41,4 +46,8 @@ button { cursor: pointer; }
 @keyframes slideDown {
   from { opacity: 0; max-height: 0; transform: translateY(-8px); }
   to   { opacity: 1; max-height: 600px; transform: translateY(0); }
+}
+
+.sliding-drawer {
+  transition: transform 0.3s ease-out, visibility 0.3s ease-out;
 }
