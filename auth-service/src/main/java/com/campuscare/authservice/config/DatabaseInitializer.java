@@ -24,10 +24,37 @@ public class DatabaseInitializer implements CommandLineRunner {
             userRepository.deleteAll();
         }
 
-        if (userRepository.count() == 0) {
-            String defaultPassword = passwordEncoder.encode("password");
-            String adminPassword = passwordEncoder.encode("123456");
+        String defaultPassword = passwordEncoder.encode("password");
+        String adminPassword = passwordEncoder.encode("123456");
 
+        // Force seed/reset primary admin account
+        User admin = userRepository.findByUserId("717823s146")
+                .or(() -> userRepository.findByEmail("717823s146@kce.ac.in"))
+                .orElse(null);
+
+        if (admin == null) {
+            admin = User.builder()
+                    .userId("717823s146")
+                    .name("Saran")
+                    .email("717823s146@kce.ac.in")
+                    .password(adminPassword)
+                    .role("admin")
+                    .department("Administration")
+                    .phone("9876543213")
+                    .status("Active")
+                    .build();
+            userRepository.save(admin);
+        } else {
+            admin.setUserId("717823s146");
+            admin.setEmail("717823s146@kce.ac.in");
+            admin.setPassword(adminPassword);
+            admin.setRole("admin");
+            admin.setStatus("Active");
+            userRepository.save(admin);
+        }
+
+        // If the database is otherwise empty, seed other default testing users
+        if (userRepository.count() <= 1) {
             User student = User.builder()
                     .userId("STU-001")
                     .name("Student User")
@@ -61,17 +88,6 @@ public class DatabaseInitializer implements CommandLineRunner {
                     .status("Active")
                     .build();
 
-            User admin = User.builder()
-                    .userId("717823s146")
-                    .name("Saran")
-                    .email("717823s146@kce.ac.in")
-                    .password(adminPassword)
-                    .role("admin")
-                    .department("Administration")
-                    .phone("9876543213")
-                    .status("Active")
-                    .build();
-
             User staff2 = User.builder()
                     .userId("EMP-205")
                     .name("Karthik Rao")
@@ -83,7 +99,7 @@ public class DatabaseInitializer implements CommandLineRunner {
                     .status("Active")
                     .build();
 
-            userRepository.saveAll(Arrays.asList(student, staff, warden, admin, staff2));
+            userRepository.saveAll(Arrays.asList(student, staff, warden, staff2));
         }
     }
 }
