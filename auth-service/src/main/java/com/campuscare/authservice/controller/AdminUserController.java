@@ -77,6 +77,10 @@ public class AdminUserController {
         User user = userRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
 
+        if (userId.equalsIgnoreCase("717823s146") || user.getEmail().equalsIgnoreCase("717823s146@kce.ac.in")) {
+            throw new BadRequestException("The primary admin account status cannot be deactivated.");
+        }
+
         if (user.getStatus().equalsIgnoreCase("Active")) {
             user.setStatus("Inactive");
         } else {
@@ -94,6 +98,10 @@ public class AdminUserController {
         User user = userRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
 
+        if (userId.equalsIgnoreCase("717823s146") || user.getEmail().equalsIgnoreCase("717823s146@kce.ac.in")) {
+            throw new BadRequestException("The primary admin account cannot be deleted.");
+        }
+
         userRepository.delete(user);
         logService.logActivity("ADMIN_DELETE_USER", userId, "Administrator deleted user account.");
         return ResponseEntity.ok(java.util.Collections.singletonMap("message", "User deleted successfully"));
@@ -104,6 +112,18 @@ public class AdminUserController {
     public ResponseEntity<User> updateUser(@PathVariable String userId, @RequestBody SignupRequest request) {
         User user = userRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
+
+        if (userId.equalsIgnoreCase("717823s146") || user.getEmail().equalsIgnoreCase("717823s146@kce.ac.in")) {
+            if (request.getRole() != null && !request.getRole().equalsIgnoreCase("admin")) {
+                throw new BadRequestException("The primary admin account role cannot be changed.");
+            }
+            if (request.getEmail() != null && !request.getEmail().equalsIgnoreCase("717823s146@kce.ac.in")) {
+                throw new BadRequestException("The primary admin email cannot be changed.");
+            }
+            if (request.getUserId() != null && !request.getUserId().equalsIgnoreCase("717823s146")) {
+                throw new BadRequestException("The primary admin User ID cannot be changed.");
+            }
+        }
 
         // Check if email is already used by another user
         if (request.getEmail() != null && !request.getEmail().equalsIgnoreCase(user.getEmail())) {

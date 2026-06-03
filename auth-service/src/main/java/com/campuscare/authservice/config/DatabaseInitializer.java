@@ -19,14 +19,14 @@ public class DatabaseInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        // If the old admin profile ADM-001 exists, wipe existing users to allow fresh seeding
-        if (userRepository.existsByUserId("ADM-001")) {
+        // If the old admin email exists, wipe existing users to allow fresh seeding
+        if (userRepository.existsByEmail("admin@example.com")) {
             userRepository.deleteAll();
         }
 
         if (userRepository.count() == 0) {
             String defaultPassword = passwordEncoder.encode("password");
-            String adminPassword = passwordEncoder.encode("admin");
+            String adminPassword = passwordEncoder.encode("123456");
 
             User student = User.builder()
                     .userId("STU-001")
@@ -64,7 +64,7 @@ public class DatabaseInitializer implements CommandLineRunner {
             User admin = User.builder()
                     .userId("717823s146")
                     .name("Saran")
-                    .email("admin@example.com")
+                    .email("717823s146@kce.ac.in")
                     .password(adminPassword)
                     .role("admin")
                     .department("Administration")
