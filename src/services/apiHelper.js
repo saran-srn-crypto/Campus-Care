@@ -6,10 +6,10 @@ const USE_MOCK = false; // Set to false to connect to the backend microservices 
 /* ─── Client-side In-memory Mock Database for Disconnected Mode ─── */
 let mockTickets = [...(SEED_DATA?.tickets || [])];
 let mockUsers = [
-  { userId: '717823s146', name: 'Student User', email: 'student@example.com', role: 'student', department: 'Computer Science', phone: '9876543210', status: 'Active' },
+  { userId: 'STU-001', name: 'Student User', email: 'student@example.com', role: 'student', department: 'Computer Science', phone: '9876543210', status: 'Active' },
   { userId: 'EMP-204', name: 'Meera Nair', email: 'staff@example.com', role: 'staff', department: 'IT Services', phone: '9876543211', status: 'Active' },
   { userId: 'WRD-102', name: 'Ravi Iyer', email: 'warden@example.com', role: 'warden', department: 'Hostel Block C', phone: '9876543212', status: 'Active' },
-  { userId: '717823s146', name: 'Saran', email: 'admin@example.com', role: 'admin', department: 'Administration', phone: '9876543213', status: 'Active' }
+  { userId: '717823s146', name: 'Saran', email: '717823s146@kce.ac.in', role: 'admin', department: 'Administration', phone: '9876543213', status: 'Active' }
 ];
 let mockCategories = [
   { name: 'Hostel' },
@@ -352,6 +352,9 @@ function simulateRequest(method, originalPath, body = null, isBlob = false) {
     const userId = path.split('/')[4];
     const user = mockUsers.find(u => u.userId === userId);
     if (user) {
+      if (userId === '717823s146' || user.email === '717823s146@kce.ac.in') {
+        throw new Error("The primary admin account status cannot be deactivated.");
+      }
       user.status = user.status === 'Active' ? 'Inactive' : 'Active';
     }
     return user;
@@ -360,6 +363,10 @@ function simulateRequest(method, originalPath, body = null, isBlob = false) {
   // Delete admin user
   if (path.startsWith('/api/admin/users/') && method === 'DELETE') {
     const userId = path.split('/')[4];
+    const user = mockUsers.find(u => u.userId === userId);
+    if (userId === '717823s146' || (user && user.email === '717823s146@kce.ac.in')) {
+      throw new Error("The primary admin account cannot be deleted.");
+    }
     const idx = mockUsers.findIndex(u => u.userId === userId);
     if (idx >= 0) {
       mockUsers.splice(idx, 1);
@@ -372,6 +379,17 @@ function simulateRequest(method, originalPath, body = null, isBlob = false) {
     const userId = path.split('/')[4];
     const user = mockUsers.find(u => u.userId === userId);
     if (user) {
+      if (userId === '717823s146' || user.email === '717823s146@kce.ac.in') {
+        if (body.role && body.role.toLowerCase() !== 'admin') {
+          throw new Error("The primary admin account role cannot be changed.");
+        }
+        if (body.email && body.email !== '717823s146@kce.ac.in') {
+          throw new Error("The primary admin email cannot be changed.");
+        }
+        if (body.userId && body.userId !== '717823s146') {
+          throw new Error("The primary admin User ID cannot be changed.");
+        }
+      }
       if (body.email) user.email = body.email;
       if (body.name) user.name = body.name;
       if (body.role) user.role = body.role.toLowerCase();

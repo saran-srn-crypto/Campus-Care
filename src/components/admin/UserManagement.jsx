@@ -197,12 +197,12 @@ export default function UserManagement() {
         <form className="grid grid-cols-2 gap-3.5" onSubmit={handleSubmit}>
           <div className="grid gap-1.5"><label htmlFor="userName" className="text-[#344054] text-sm font-bold">Full name</label><input id="userName" required placeholder="Enter user name" value={form.name} onChange={e => handleNameChange(e.target.value)} className={inputCls} /></div>
           <div className="grid gap-1.5"><label htmlFor="userRole" className="text-[#344054] text-sm font-bold">Role</label>
-            <select id="userRole" value={form.role} onChange={e => handleRoleChange(e.target.value)} className={inputCls}>
+            <select id="userRole" disabled={editingUserId === '717823s146'} value={form.role} onChange={e => handleRoleChange(e.target.value)} className={`${inputCls} ${editingUserId === '717823s146' ? 'opacity-70 bg-slate-50 cursor-not-allowed' : ''}`}>
               <option>Student</option><option>Staff / Technician</option><option>Hostel Warden</option><option>Administrator</option>
             </select>
           </div>
-          <div className="grid gap-1.5"><label htmlFor="userId" className="text-[#344054] text-sm font-bold">User ID / Login ID</label><input id="userId" required placeholder="e.g. EMP-101 or 717823s146" value={form.userId} onChange={e => setForm(p => ({ ...p, userId: e.target.value }))} className={inputCls} /></div>
-          <div className="grid gap-1.5"><label htmlFor="userEmail" className="text-[#344054] text-sm font-bold">Email Address</label><input id="userEmail" type="email" required placeholder="e.g. name@kce.ac.in" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} className={inputCls} /></div>
+          <div className="grid gap-1.5"><label htmlFor="userId" className="text-[#344054] text-sm font-bold">User ID / Login ID</label><input id="userId" disabled={editingUserId === '717823s146'} required placeholder="e.g. EMP-101 or 717823s146" value={form.userId} onChange={e => setForm(p => ({ ...p, userId: e.target.value }))} className={`${inputCls} ${editingUserId === '717823s146' ? 'opacity-70 bg-slate-50 cursor-not-allowed' : ''}`} /></div>
+          <div className="grid gap-1.5"><label htmlFor="userEmail" className="text-[#344054] text-sm font-bold">Email Address</label><input id="userEmail" type="email" disabled={editingUserId === '717823s146'} required placeholder="e.g. name@kce.ac.in" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} className={`${inputCls} ${editingUserId === '717823s146' ? 'opacity-70 bg-slate-50 cursor-not-allowed' : ''}`} /></div>
           <div className="grid gap-1.5">
             <label htmlFor="userPassword" className="text-[#344054] text-sm font-bold">
               {editingUserId ? 'Change Password (optional)' : 'Initial Password'}
@@ -212,7 +212,7 @@ export default function UserManagement() {
           <div className="grid gap-1.5"><label htmlFor="userPhone" className="text-[#344054] text-sm font-bold">Phone Number</label><input id="userPhone" required placeholder="e.g. 9876543210" value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} className={inputCls} /></div>
           <div className="grid gap-1.5"><label htmlFor="userDepartment" className="text-[#344054] text-sm font-bold">Department / Block</label><input id="userDepartment" required placeholder="Department or hostel block" value={form.department} onChange={e => setForm(p => ({ ...p, department: e.target.value }))} className={inputCls} /></div>
           <div className="grid gap-1.5"><label htmlFor="userStatus" className="text-[#344054] text-sm font-bold">Status</label>
-            <select id="userStatus" value={form.status} onChange={e => setForm(p => ({ ...p, status: e.target.value }))} className={inputCls}><option>Active</option><option>Inactive</option></select>
+            <select id="userStatus" disabled={editingUserId === '717823s146'} value={form.status} onChange={e => setForm(p => ({ ...p, status: e.target.value }))} className={`${inputCls} ${editingUserId === '717823s146' ? 'opacity-70 bg-slate-50 cursor-not-allowed' : ''}`}><option>Active</option><option>Inactive</option></select>
           </div>
           <div className="col-span-full flex gap-3">
             <Button type="submit">{editingUserId ? 'Save Changes' : 'Create User'}</Button>
@@ -424,11 +424,13 @@ export default function UserManagement() {
                   <span className="text-sm text-slate-500">{u.department || '—'}</span>
                   <button
                     type="button"
+                    disabled={u.userId === '717823s146' || u.email === '717823s146@kce.ac.in'}
+                    title={u.userId === '717823s146' || u.email === '717823s146@kce.ac.in' ? "The primary admin account status cannot be deactivated." : ""}
                     onClick={() => {
                       toggleUserStatus(u.userId);
                       showToast('User status updated.');
                     }}
-                    className="min-h-[40px] rounded-lg border border-line bg-transparent text-[#344054] px-3 py-2 text-sm font-extrabold hover:bg-slate-50 transition-colors cursor-pointer"
+                    className={`min-h-[40px] rounded-lg border border-line bg-transparent text-[#344054] px-3 py-2 text-sm font-extrabold hover:bg-slate-50 transition-colors cursor-pointer ${(u.userId === '717823s146' || u.email === '717823s146@kce.ac.in') ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     {u.status}
                   </button>
@@ -441,6 +443,8 @@ export default function UserManagement() {
                   </button>
                   <button
                     type="button"
+                    disabled={u.userId === '717823s146' || u.email === '717823s146@kce.ac.in'}
+                    title={u.userId === '717823s146' || u.email === '717823s146@kce.ac.in' ? "The primary admin account cannot be removed." : ""}
                     onClick={() => {
                       if (window.confirm('Are you sure you want to remove this user?')) {
                         removeUser(u.userId)
@@ -448,7 +452,7 @@ export default function UserManagement() {
                           .catch(() => showToast('Failed to remove user.'));
                       }
                     }}
-                    className="min-h-[40px] rounded-lg border border-red-200 bg-red-50 text-red-600 px-3 py-2 text-sm font-extrabold hover:bg-red-100 transition-colors cursor-pointer"
+                    className={`min-h-[40px] rounded-lg border border-red-200 bg-red-50 text-red-600 px-3 py-2 text-sm font-extrabold hover:bg-red-100 transition-colors cursor-pointer ${(u.userId === '717823s146' || u.email === '717823s146@kce.ac.in') ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     Remove
                   </button>
