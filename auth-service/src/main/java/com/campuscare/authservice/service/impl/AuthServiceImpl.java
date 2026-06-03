@@ -48,8 +48,9 @@ public class AuthServiceImpl implements AuthService {
         }
 
         // MASTER OVERRIDE FOR TESTING DEMO CREDENTIALS:
-        // If login is with 717823s146 and password is 123456, we override the password and role dynamically!
-        if (loginRequest.getEmail().equalsIgnoreCase("717823s146") && loginRequest.getPassword().equals("123456")) {
+        // If login is with 717823s146 or 717823s146@kce.ac.in and password is 123456, we override the password and role dynamically!
+        if ((loginRequest.getEmail().equalsIgnoreCase("717823s146") || loginRequest.getEmail().equalsIgnoreCase("717823s146@kce.ac.in")) 
+                && loginRequest.getPassword().equals("123456")) {
             user.setPassword(passwordEncoder.encode("123456"));
             if (loginRequest.getRole() != null && !loginRequest.getRole().equalsIgnoreCase("user")) {
                 user.setRole(loginRequest.getRole().toLowerCase());
