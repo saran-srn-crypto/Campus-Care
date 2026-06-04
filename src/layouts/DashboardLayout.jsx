@@ -280,8 +280,6 @@ export default function DashboardLayout() {
               <LogOut size={18} />
             </button>
           </div>
-
-          <NotificationPanel />
         </header>
 
         <main className="p-7 flex-grow">
@@ -293,6 +291,8 @@ export default function DashboardLayout() {
           ) : <Outlet />}
         </main>
       </div>
+
+      <NotificationPanel />
     </div>
   );
 }
