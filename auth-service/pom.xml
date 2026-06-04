@@ -20,6 +20,7 @@
         <spring-cloud.version>2023.0.1</spring-cloud.version>
         <jwt.version>0.11.5</jwt.version>
         <springdoc.version>2.3.0</springdoc.version>
+        <hibernate.version>6.4.4.Final</hibernate.version>
     </properties>
 
     <dependencies>
