@@ -4,6 +4,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useNotifications } from '../../hooks/useNotifications';
 import { ROLE_LABELS } from '../../utils/constants';
 import { validateEmail, validatePassword, validatePasswordMatch } from '../../utils/validators';
+import { api } from '../../services/apiHelper';
 import Button from '../common/Button';
 import { GraduationCap, Wrench, Building } from 'lucide-react';
 
@@ -11,8 +12,8 @@ import { GraduationCap, Wrench, Building } from 'lucide-react';
 const ROLE_FIELDS = {
   student: [
     { key: 'name', label: 'Full name', placeholder: 'Enter your full name', type: 'text', required: true },
-    { key: 'userId', label: 'Roll number / Student ID', placeholder: 'e.g. 717823S146', type: 'text', required: true },
-    { key: 'email', label: 'College email address', placeholder: 'name@kce.ac.in', type: 'email', required: true },
+    { key: 'userId', label: 'Roll number / Student ID', placeholder: 'e.g. 71782xxxxx', type: 'text', required: true },
+    { key: 'email', label: 'College email address', placeholder: '71782xxxxx@kce.ac.in', type: 'email', required: true },
     { key: 'department', label: 'Department', placeholder: 'e.g. Computer Science', type: 'text', required: true },
     { key: 'year', label: 'Year / Semester', placeholder: 'e.g. 3rd Year / 6th Sem', type: 'text', required: true },
     { key: 'hostelBlock', label: 'Hostel block & Room no.', placeholder: 'e.g. Block C, Room 214', type: 'text', required: false },
@@ -73,7 +74,9 @@ export default function SignupForm() {
     if (matchErr) { showToast(matchErr); return; }
 
     try {
-      const result = await signup({
+      await api.post(`/api/auth/otp/send-registration?email=${encodeURIComponent(form.email)}&userId=${encodeURIComponent(form.userId)}`);
+      showToast('Verification code sent to your email.');
+      sessionStorage.setItem('campuscare-signup-pending', JSON.stringify({
         role: form.role,
         label: ROLE_LABELS[form.role],
         name: form.name,
@@ -87,10 +90,8 @@ export default function SignupForm() {
         designation: form.designation,
         specialization: form.specialization,
         floorsManaged: form.floorsManaged,
-      });
-      if (result && result.error) { showToast(result.error); return; }
-      showToast('Account created. Opening your dashboard.');
-      setTimeout(() => navigate('/dashboard'), 650);
+      }));
+      setTimeout(() => navigate('/verify-email'), 650);
     } catch (err) {
       showToast(err.message || 'Registration failed');
     }
