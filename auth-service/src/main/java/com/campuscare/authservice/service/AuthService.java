@@ -8,4 +8,7 @@ public interface AuthService {
     User signup(SignupRequest signupRequest);
     User getProfile(String email);
     User updateProfile(String email, ProfileUpdateRequest request);
+    void sendRegistrationOtp(String email, String userId);
+    void sendForgotPasswordOtp(String emailOrUserId);
+    void resetPassword(ResetPasswordRequest request);
 }

@@ -17,3 +17,6 @@ target/
 # System files
 .DS_Store
 Thumbs.db
+
+# Secrets
+**/application-secret.properties

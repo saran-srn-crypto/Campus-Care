@@ -72,4 +72,34 @@ public class AuthController {
     public ResponseEntity<List<User>> getStaff() {
         return ResponseEntity.ok(userRepository.findByRole("staff"));
     }
+
+    @PostMapping("/otp/send-registration")
+    @Operation(summary = "Generate and send registration verification OTP")
+    public ResponseEntity<?> sendRegistrationOtp(@RequestParam String email, @RequestParam String userId) {
+        authService.sendRegistrationOtp(email, userId);
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("message", "Verification OTP sent successfully.");
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/otp/send-forgot-password")
+    @Operation(summary = "Generate and send forgot password verification OTP")
+    public ResponseEntity<?> sendForgotPasswordOtp(@RequestParam String emailOrUserId) {
+        authService.sendForgotPasswordOtp(emailOrUserId);
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("message", "Verification OTP sent successfully.");
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/otp/reset-password")
+    @Operation(summary = "Verify forgot password OTP and reset password")
+    public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request);
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("message", "Password reset successfully.");
+        return ResponseEntity.ok(response);
+    }
 }

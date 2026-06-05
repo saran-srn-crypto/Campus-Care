@@ -9,6 +9,7 @@ import com.campuscare.authservice.security.JwtTokenProvider;
 import com.campuscare.authservice.security.UserDetailsImpl;
 import com.campuscare.authservice.service.AuthService;
 import com.campuscare.authservice.service.LogService;
+import com.campuscare.authservice.service.OtpService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -35,6 +36,9 @@ public class AuthServiceImpl implements AuthService {
 
     @Autowired
     private LogService logService;
+
+    @Autowired
+    private OtpService otpService;
 
     @Override
     public LoginResponse login(LoginRequest loginRequest) {
@@ -119,6 +123,15 @@ public class AuthServiceImpl implements AuthService {
             }
         }
 
+        if (signupRequest.getOtp() == null || signupRequest.getOtp().trim().isEmpty()) {
+            throw new BadRequestException("Verification OTP is required.");
+        }
+
+        boolean isOtpValid = otpService.verifyOtp(signupRequest.getEmail(), signupRequest.getOtp(), "REGISTRATION");
+        if (!isOtpValid) {
+            throw new BadRequestException("Invalid or expired verification OTP.");
+        }
+
         User user = User.builder()
                 .userId(signupRequest.getUserId())
                 .email(signupRequest.getEmail())
@@ -131,6 +144,7 @@ public class AuthServiceImpl implements AuthService {
                 .build();
 
         User savedUser = userRepository.save(user);
+        otpService.deleteOtp(savedUser.getEmail(), "REGISTRATION");
         logService.logActivity("USER_REGISTRATION", savedUser.getUserId(), "User registered successfully with role: " + savedUser.getRole());
         return savedUser;
     }
@@ -154,5 +168,34 @@ public class AuthServiceImpl implements AuthService {
         User updatedUser = userRepository.save(user);
         logService.logActivity("PROFILE_UPDATE", updatedUser.getUserId(), "User updated profile details.");
         return updatedUser;
+    }
+
+    @Override
+    public void sendRegistrationOtp(String email, String userId) {
+        otpService.sendRegistrationOtp(email, userId);
+    }
+
+    @Override
+    public void sendForgotPasswordOtp(String emailOrUserId) {
+        otpService.sendForgotPasswordOtp(emailOrUserId);
+    }
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional
+    public void resetPassword(ResetPasswordRequest request) {
+        User user = userRepository.findByEmail(request.getEmailOrUserId())
+                .or(() -> userRepository.findByUserId(request.getEmailOrUserId()))
+                .orElseThrow(() -> new ResourceNotFoundException("No account found with the provided Email or User ID."));
+
+        boolean isOtpValid = otpService.verifyOtp(user.getEmail(), request.getOtp(), "FORGOT_PASSWORD");
+        if (!isOtpValid) {
+            throw new BadRequestException("Invalid or expired verification OTP.");
+        }
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
+        otpService.deleteOtp(user.getEmail(), "FORGOT_PASSWORD");
+        logService.logActivity("PASSWORD_RESET", user.getUserId(), "User successfully reset their password via OTP.");
     }
 }
