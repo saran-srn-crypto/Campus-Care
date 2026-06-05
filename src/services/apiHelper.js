@@ -26,6 +26,8 @@ let mockNotifications = [
 // Current logged-in mock session user reference
 let currentUser = mockUsers[3]; // Default to seeded admin
 
+let mockOtps = [];
+
 function simulateRequest(method, originalPath, body = null, isBlob = false) {
   // Console logging for clear feedback to developers
   console.log(`[MOCK API] ${method} ${originalPath}`, body);
@@ -96,6 +98,12 @@ function simulateRequest(method, originalPath, body = null, isBlob = false) {
 
   // Signup handler
   if (path === '/api/auth/signup' && method === 'POST') {
+    const savedOtp = mockOtps.find(o => o.email === body.email && o.purpose === 'REGISTRATION');
+    if (!savedOtp || savedOtp.otp !== body.otp || savedOtp.expiry < Date.now()) {
+      throw new Error("Invalid or expired verification OTP.");
+    }
+    mockOtps = mockOtps.filter(o => !(o.email === body.email && o.purpose === 'REGISTRATION'));
+
     const newUser = {
       userId: body.userId,
       email: body.email,
@@ -435,6 +443,62 @@ function simulateRequest(method, originalPath, body = null, isBlob = false) {
   if (path === '/api/notifications/read-all' && method === 'POST') {
     mockNotifications.forEach(n => n.unread = false);
     return { success: true };
+  }
+
+  // Send registration OTP
+  if (path.startsWith('/api/auth/otp/send-registration') && method === 'POST') {
+    const email = queryParams.email || body?.email;
+    const userId = queryParams.userId || body?.userId;
+
+    if (mockUsers.some(u => u.email === email || u.userId === userId)) {
+      throw new Error("Email or User ID is already registered.");
+    }
+
+    const otp = "123456";
+    mockOtps = mockOtps.filter(o => !(o.email === email && o.purpose === 'REGISTRATION'));
+    mockOtps.push({ email, otp, purpose: 'REGISTRATION', expiry: Date.now() + 5 * 60 * 1000 });
+
+    console.log(`\n[MOCK API - REGISTRATION OTP] Generated OTP for ${email}: ${otp}\n`);
+    return { success: true, message: "Verification OTP sent successfully (Mock Mode)." };
+  }
+
+  // Send forgot password OTP
+  if (path.startsWith('/api/auth/otp/send-forgot-password') && method === 'POST') {
+    const emailOrUserId = queryParams.emailOrUserId || body?.emailOrUserId;
+    const matchedUser = mockUsers.find(u => u.email === emailOrUserId || u.userId === emailOrUserId);
+    if (!matchedUser) {
+      throw new Error("No account found with the provided Email or User ID.");
+    }
+
+    const otp = "654321";
+    mockOtps = mockOtps.filter(o => !(o.email === matchedUser.email && o.purpose === 'FORGOT_PASSWORD'));
+    mockOtps.push({ email: matchedUser.email, otp, purpose: 'FORGOT_PASSWORD', expiry: Date.now() + 5 * 60 * 1000 });
+
+    console.log(`\n[MOCK API - FORGOT PASSWORD OTP] Generated OTP for ${matchedUser.email}: ${otp}\n`);
+    return { success: true, message: "Verification OTP sent successfully (Mock Mode)." };
+  }
+
+  // Reset password
+  if (path === '/api/auth/otp/reset-password' && method === 'POST') {
+    const { emailOrUserId, otp, newPassword } = body;
+    const matchedUser = mockUsers.find(u => u.email === emailOrUserId || u.userId === emailOrUserId);
+    if (!matchedUser) {
+      throw new Error("No account found with the provided Email or User ID.");
+    }
+
+    const savedOtp = mockOtps.find(o => o.email === matchedUser.email && o.purpose === 'FORGOT_PASSWORD');
+    if (!savedOtp || savedOtp.otp !== otp || savedOtp.expiry < Date.now()) {
+      throw new Error("Invalid or expired verification OTP.");
+    }
+
+    mockOtps = mockOtps.filter(o => !(o.email === matchedUser.email && o.purpose === 'FORGOT_PASSWORD'));
+    matchedUser.password = newPassword;
+    
+    const idx = mockUsers.findIndex(u => u.userId === matchedUser.userId);
+    if (idx >= 0) mockUsers[idx] = matchedUser;
+
+    console.log(`[MOCK API] Password reset successfully for user: ${matchedUser.email}`);
+    return { success: true, message: "Password reset successfully (Mock Mode)." };
   }
 
   return null;

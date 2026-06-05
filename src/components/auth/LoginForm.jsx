@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useNotifications } from '../../hooks/useNotifications';
 import Button from '../common/Button';
@@ -59,7 +59,10 @@ export default function LoginForm() {
             className="w-full border border-[#cbd5e1] rounded-lg bg-white text-ink px-3 py-2.5 outline-none focus:border-primary focus:shadow-[0_0_0_3px_rgba(31,87,195,0.14)]" />
         </div>
         <div className="grid gap-1.5">
-          <label htmlFor="loginPassword" className="text-[#344054] text-sm font-bold">Password</label>
+          <div className="flex justify-between items-center">
+            <label htmlFor="loginPassword" className="text-[#344054] text-sm font-bold">Password</label>
+            <Link to="/forgot-password" className="text-primary text-sm font-extrabold hover:underline">Forgot password?</Link>
+          </div>
           <input id="loginPassword" type="password" required autoComplete="current-password" placeholder="Enter password" value={password} onChange={e => setPassword(e.target.value)}
             className="w-full border border-[#cbd5e1] rounded-lg bg-white text-ink px-3 py-2.5 outline-none focus:border-primary focus:shadow-[0_0_0_3px_rgba(31,87,195,0.14)]" />
         </div>
