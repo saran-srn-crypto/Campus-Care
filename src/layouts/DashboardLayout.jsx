@@ -60,7 +60,7 @@ function getInitials(value) {
 export default function DashboardLayout() {
   const { session, role, logout, getProfile } = useAuth();
   const { unreadCount, togglePanel, showToast } = useNotifications();
-  const { resetState } = useTickets();
+  const { resetState, setSelectedTicket } = useTickets();
   const navigate = useNavigate();
   const location = useLocation();
   const [view, setView] = useState('dashboard');
@@ -69,6 +69,10 @@ export default function DashboardLayout() {
   useEffect(() => {
     if (role === 'student') setView('dashboard');
   }, [location.pathname, role]);
+
+  useEffect(() => {
+    setSelectedTicket(null);
+  }, [location.pathname, setSelectedTicket]);
 
   const routeMeta = useMemo(() => {
     if (view === 'account' || location.pathname === '/student/profile') {
