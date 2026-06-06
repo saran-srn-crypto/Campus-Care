@@ -89,13 +89,8 @@ export function useStudentComplaints(params) {
     }
     load(false);
 
-    const interval = setInterval(() => {
-      load(true);
-    }, 20000);
-
     return () => {
       cancelled = true;
-      clearInterval(interval);
     };
   }, [queryKey, reloadKey, page, size]);
 
