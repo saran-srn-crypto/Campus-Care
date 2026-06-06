@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useTickets } from '../../hooks/useTickets';
 import { useNotifications } from '../../hooks/useNotifications';
 import Button from '../common/Button';
+import ImageModal from '../common/ImageModal';
 
 export default function ClosureApproval({ ticket }) {
   const { updateTicket, addTimelineEntry } = useTickets();
   const { addNotification, showToast } = useNotifications();
+  const [showImagePreview, setShowImagePreview] = useState(false);
 
   const handleApprove = () => {
     if (ticket.status !== 'Resolved') { showToast('Only resolved tickets can be approved for closure.'); return; }
@@ -21,7 +23,12 @@ export default function ClosureApproval({ ticket }) {
       {ticket.proofImage && (
         <div className="grid gap-2">
           <span className="text-xs text-muted font-semibold">Proof of Completion:</span>
-          <img src={ticket.proofImage} alt="Completion proof upload" className="rounded-lg max-h-48 object-cover border border-line bg-surface-soft shadow-sm" />
+          <img 
+            src={ticket.proofImage} 
+            alt="Completion proof upload" 
+            className="rounded-lg max-h-48 object-cover border border-line bg-surface-soft shadow-sm cursor-pointer hover:scale-[1.01] transition-transform duration-200" 
+            onClick={() => setShowImagePreview(true)}
+          />
         </div>
       )}
       {ticket.resolutionNotes && (
@@ -38,6 +45,10 @@ export default function ClosureApproval({ ticket }) {
           {ticket.status === 'Closed' ? 'Closed & Approved' : 'Approve Closure'}
         </Button>
       </div>
+
+      {showImagePreview && (
+        <ImageModal src={ticket.proofImage} onClose={() => setShowImagePreview(false)} />
+      )}
     </div>
   );
 }

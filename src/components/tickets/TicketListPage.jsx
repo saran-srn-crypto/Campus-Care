@@ -2,6 +2,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTickets } from '../../hooks/useTickets';
 import { useAuth } from '../../hooks/useAuth';
+import ImageModal from '../common/ImageModal';
 import { getStats } from '../../utils/helpers';
 import StatusBadge from '../common/StatusBadge';
 import StatsGrid from '../common/StatsGrid';
@@ -45,6 +46,7 @@ export default function TicketListPage() {
   const profile = getProfile();
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [previewImage, setPreviewImage] = useState(null);
   const [statusFilter, setStatusFilter] = useState('All');
   const [priorityFilter, setPriorityFilter] = useState('All');
   const [categoryFilter, setCategoryFilter] = useState('All');
@@ -371,7 +373,7 @@ export default function TicketListPage() {
                       return (
                         <div key={idx} className="p-2 rounded-xl bg-surface-soft border border-line flex-shrink-0">
                           {isBase64 ? (
-                            <img src={att} alt={`Attachment ${idx + 1}`} className="rounded-lg max-h-36 max-w-[200px] object-cover border border-line shadow-sm hover:scale-[1.02] transition-transform duration-200" />
+                            <img src={att} alt={`Attachment ${idx + 1}`} className="rounded-lg max-h-36 max-w-[200px] object-cover border border-line shadow-sm hover:scale-[1.02] transition-transform duration-200 cursor-pointer" onClick={() => setPreviewImage(att)} />
                           ) : (
                             <div className="flex flex-col gap-1.5 items-center justify-center w-36 h-28 bg-[#f8fafc] rounded-lg border border-[#e2e8f0] text-xs font-bold text-muted text-center p-3 shadow-sm">
                               <div className="w-10 h-10 rounded-full bg-[#e2e8f0] text-[#475569] grid place-items-center mb-1">
@@ -436,6 +438,8 @@ export default function TicketListPage() {
           </article>
         </div>
       )}
+
+      <ImageModal src={previewImage} onClose={() => setPreviewImage(null)} />
     </>
   );
 }

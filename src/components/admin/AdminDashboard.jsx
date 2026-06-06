@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTickets } from '../../hooks/useTickets';
 import { getStats } from '../../utils/helpers';
+import ImageModal from '../common/ImageModal';
 import CategoryManagement from './CategoryManagement';
 import AuditLogs from './AuditLogs';
 import Reports from './Reports';
@@ -21,6 +22,7 @@ export default function AdminDashboard() {
 
   const [expandedId, setExpandedId] = useState(null);
   const [activeTab, setActiveTab] = useState('overview'); // 'overview', 'system'
+  const [previewImage, setPreviewImage] = useState(null);
 
   const toggleExpand = (id) => {
     setExpandedId(prev => prev === id ? null : id);
@@ -144,7 +146,7 @@ export default function AdminDashboard() {
                                   return (
                                     <div key={idx} className="p-1.5 rounded-lg bg-white border border-line">
                                       {isBase64 ? (
-                                        <img src={att} alt={`Attachment ${idx + 1}`} className="rounded max-h-28 max-w-[160px] object-cover" />
+                                        <img src={att} alt={`Attachment ${idx + 1}`} className="rounded max-h-28 max-w-[160px] object-cover cursor-pointer hover:scale-[1.01] transition-transform duration-200" onClick={() => setPreviewImage(att)} />
                                       ) : (
                                         <div className="flex items-center gap-1.5 px-3 py-2 text-xs text-muted font-bold">📁 {att}</div>
                                       )}
@@ -185,6 +187,8 @@ export default function AdminDashboard() {
           </div>
         </section>
       )}
+
+      <ImageModal src={previewImage} onClose={() => setPreviewImage(null)} />
     </>
   );
 }

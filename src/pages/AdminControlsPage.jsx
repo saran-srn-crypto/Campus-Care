@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTickets } from '../hooks/useTickets';
 import { useAuth } from '../hooks/useAuth';
+import ImageModal from '../components/common/ImageModal';
 import StatusBadge from '../components/common/StatusBadge';
 import StaffAssignment from '../components/warden/StaffAssignment';
 import ClosureApproval from '../components/warden/ClosureApproval';
@@ -30,6 +31,7 @@ export default function AdminControlsPage() {
   const [selectedId, setSelectedId] = useState(searchParams.get('ticket') || null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
+  const [previewImage, setPreviewImage] = useState(null);
 
   const filtered = useMemo(() => {
     return tickets.filter(t => {
@@ -183,7 +185,7 @@ export default function AdminControlsPage() {
                       return (
                         <div key={idx} className="p-2 rounded-xl bg-surface-soft border border-line">
                           {isBase64 ? (
-                            <img src={att} alt={`Attachment ${idx + 1}`} className="rounded-lg max-h-36 max-w-[200px] object-cover border border-line shadow-sm hover:scale-[1.02] transition-transform duration-200" />
+                            <img src={att} alt={`Attachment ${idx + 1}`} className="rounded-lg max-h-36 max-w-[200px] object-cover border border-line shadow-sm hover:scale-[1.02] transition-transform duration-200 cursor-pointer" onClick={() => setPreviewImage(att)} />
                           ) : (
                             <div className="flex flex-col gap-1.5 items-center justify-center w-36 h-28 bg-[#f8fafc] rounded-lg border border-[#e2e8f0] text-xs font-bold text-muted text-center p-3 shadow-sm">
                               <div className="w-10 h-10 rounded-full bg-[#e2e8f0] text-[#475569] grid place-items-center mb-1">📁</div>
@@ -288,6 +290,7 @@ export default function AdminControlsPage() {
           </div>
         )}
       </div>
+      <ImageModal src={previewImage} onClose={() => setPreviewImage(null)} />
     </div>
   );
 }

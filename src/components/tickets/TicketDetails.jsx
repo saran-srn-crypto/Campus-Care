@@ -1,11 +1,13 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import StatusBadge from '../common/StatusBadge';
 import Timeline from '../common/Timeline';
 import { useTickets } from '../../hooks/useTickets';
+import ImageModal from '../common/ImageModal';
 import { X } from 'lucide-react';
 
 export default function TicketDetails({ ticket, actions }) {
   const { setSelectedTicket } = useTickets();
+  const [previewImage, setPreviewImage] = useState(null);
   const isOpen = !!ticket;
 
   // Prevent background scroll when details drawer is open
@@ -93,7 +95,7 @@ export default function TicketDetails({ ticket, actions }) {
                       return (
                         <div key={idx} className="p-1.5 rounded-lg bg-surface-soft border border-line">
                           {isBase64 ? (
-                            <img src={att} alt={`Attachment ${idx + 1}`} className="rounded-md max-h-24 max-w-[150px] object-cover border border-line shadow-sm hover:scale-[1.02] transition-transform duration-200" />
+                            <img src={att} alt={`Attachment ${idx + 1}`} className="rounded-md max-h-24 max-w-[150px] object-cover border border-line shadow-sm hover:scale-[1.02] transition-transform duration-200 cursor-pointer" onClick={() => setPreviewImage(att)} />
                           ) : (
                             <div className="flex flex-col gap-1 items-center justify-center w-28 h-20 bg-[#f8fafc] rounded-md border border-[#e2e8f0] text-[10px] font-bold text-muted text-center p-2 shadow-sm">
                               <div className="w-7 h-7 rounded-full bg-[#e2e8f0] text-[#475569] grid place-items-center mb-1 text-xs">
@@ -152,6 +154,8 @@ export default function TicketDetails({ ticket, actions }) {
           )}
         </div>
       </section>
+
+      <ImageModal src={previewImage} onClose={() => setPreviewImage(null)} />
     </>
   );
 }
