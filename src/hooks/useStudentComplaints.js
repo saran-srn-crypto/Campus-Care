@@ -91,7 +91,7 @@ export function useStudentComplaints(params) {
 
     const interval = setInterval(() => {
       load(true);
-    }, 5000);
+    }, 20000);
 
     return () => {
       cancelled = true;
