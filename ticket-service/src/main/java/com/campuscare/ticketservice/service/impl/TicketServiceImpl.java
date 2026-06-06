@@ -139,7 +139,10 @@ public class TicketServiceImpl implements TicketService {
             createTicketActivityLog(id, "Ticket Closed", user.getUserId(), "Ticket was closed by " + user.getName());
             createStatusHistoryEntry(id, "Closed", user.getUserId(), "Ticket closed.");
             logService.logActivity("TICKET_CLOSED", user.getUserId(), "Ticket Closed: " + id);
-            createNotification("Ticket Closed: " + id, "Complaint has been closed and marked resolved.", "all");
+            createNotification("Ticket Closed: " + id, "Complaint has been closed and marked resolved.", ticket.getOwner());
+            if (ticket.getAssignee() != null && !ticket.getAssignee().trim().isEmpty()) {
+                createNotification("Ticket Closed: " + id, "Complaint has been closed and marked resolved.", ticket.getAssignee());
+            }
         } else {
             if (request.getTitle() != null) ticket.setTitle(request.getTitle());
             if (request.getPriority() != null) ticket.setPriority(request.getPriority());
@@ -206,7 +209,9 @@ public class TicketServiceImpl implements TicketService {
         logService.logActivity("TICKET_COMMENT_ADDED", user.getUserId(), "Added comment to ticket: " + id);
 
         if (user.getRole().equalsIgnoreCase("student")) {
-            createNotification("New comment on " + id, "Student added a comment: " + text, "staff");
+            if (ticket.getAssignee() != null && !ticket.getAssignee().trim().isEmpty()) {
+                createNotification("New comment on " + id, "Student added a comment: " + text, ticket.getAssignee());
+            }
             createNotification("New comment on " + id, "Student added a comment: " + text, "admin");
         } else {
             createNotification("New comment on " + id, "Staff response: " + text, ticket.getOwner());
