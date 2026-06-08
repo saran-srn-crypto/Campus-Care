@@ -124,24 +124,51 @@ public class TicketServiceImpl implements TicketService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User profile not found."));
 
-        if (request.getStatus() != null && request.getStatus().equalsIgnoreCase("Closed")) {
-            if (!ticket.getOwner().equalsIgnoreCase(user.getUserId()) && !user.getRole().equalsIgnoreCase("admin")) {
-                throw new BadRequestException("Only the complaint owner can close this ticket.");
-            }
-            ticket.setStatus("Closed");
-            if (request.getRating() != null) {
-                ticket.setRating(request.getRating());
-            }
-            if (request.getResolutionNotes() != null) {
-                ticket.setResolutionNotes(request.getResolutionNotes());
-            }
-            createTimelineEntry(id, "Ticket closed", "Ticket was finalized and closed by the student with rating: " + request.getRating());
-            createTicketActivityLog(id, "Ticket Closed", user.getUserId(), "Ticket was closed by " + user.getName());
-            createStatusHistoryEntry(id, "Closed", user.getUserId(), "Ticket closed.");
-            logService.logActivity("TICKET_CLOSED", user.getUserId(), "Ticket Closed: " + id);
-            createNotification("Ticket Closed: " + id, "Complaint has been closed and marked resolved.", ticket.getOwner());
-            if (ticket.getAssignee() != null && !ticket.getAssignee().trim().isEmpty()) {
-                createNotification("Ticket Closed: " + id, "Complaint has been closed and marked resolved.", ticket.getAssignee());
+        if (request.getStatus() != null) {
+            String newStatus = request.getStatus();
+            if (newStatus.equalsIgnoreCase("Closed")) {
+                if (!ticket.getOwner().equalsIgnoreCase(user.getUserId()) && !user.getRole().equalsIgnoreCase("admin")) {
+                    throw new BadRequestException("Only the complaint owner can close this ticket.");
+                }
+                ticket.setStatus("Closed");
+                if (request.getRating() != null) {
+                    ticket.setRating(request.getRating());
+                }
+                if (request.getResolutionNotes() != null) {
+                    ticket.setResolutionNotes(request.getResolutionNotes());
+                }
+                createTimelineEntry(id, "Ticket closed", "Ticket was finalized and closed by the student with rating: " + request.getRating());
+                createTicketActivityLog(id, "Ticket Closed", user.getUserId(), "Ticket was closed by " + user.getName());
+                createStatusHistoryEntry(id, "Closed", user.getUserId(), "Ticket closed.");
+                logService.logActivity("TICKET_CLOSED", user.getUserId(), "Ticket Closed: " + id);
+                createNotification("Ticket Closed: " + id, "Complaint has been closed and marked resolved.", ticket.getOwner());
+                if (ticket.getAssignee() != null && !ticket.getAssignee().trim().isEmpty()) {
+                    createNotification("Ticket Closed: " + id, "Complaint has been closed and marked resolved.", ticket.getAssignee());
+                }
+            } else if (newStatus.equalsIgnoreCase("Reopened") || newStatus.equalsIgnoreCase("Open")) {
+                if (!ticket.getStatus().equalsIgnoreCase("Resolved") && !ticket.getStatus().equalsIgnoreCase("Closed")) {
+                    throw new BadRequestException("Only resolved or closed tickets can be reopened.");
+                }
+                if (!ticket.getOwner().equalsIgnoreCase(user.getUserId()) && !user.getRole().equalsIgnoreCase("admin")) {
+                    throw new BadRequestException("Only the complaint owner can reopen this ticket.");
+                }
+                ticket.setStatus("Reopened");
+                ticket.setResolutionNotes("");
+                ticket.setProofImage("");
+                ticket.setRating(null);
+
+                createTimelineEntry(id, "Ticket reopened", "Ticket was reopened by the student.");
+                createTicketActivityLog(id, "Ticket Reopened", user.getUserId(), "Ticket was reopened by " + user.getName());
+                createStatusHistoryEntry(id, "Reopened", user.getUserId(), "Ticket reopened.");
+                logService.logActivity("TICKET_REOPENED", user.getUserId(), "Ticket Reopened: " + id);
+
+                createNotification("Ticket Reopened: " + id, "Warden/Admin notice: Ticket has been reopened by student.", "admin");
+                createNotification("Ticket Reopened: " + id, "Warden/Admin notice: Ticket has been reopened by student.", "warden");
+                if (ticket.getAssignee() != null && !ticket.getAssignee().trim().isEmpty()) {
+                    createNotification("Ticket Reopened: " + id, "Notice: Assigned ticket has been reopened by student.", ticket.getAssignee());
+                }
+            } else {
+                throw new BadRequestException("Invalid status update request.");
             }
         } else {
             if (request.getTitle() != null) ticket.setTitle(request.getTitle());
@@ -228,14 +255,27 @@ public class TicketServiceImpl implements TicketService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User profile not found."));
 
-        ticket.setStatus(status);
-        if (proofImage != null && !proofImage.trim().isEmpty()) {
-            ticket.setProofImage(proofImage);
-        }
-        if (resolutionNotes != null && !resolutionNotes.trim().isEmpty()) {
-            ticket.setResolutionNotes(resolutionNotes);
-        } else if (notes != null && !notes.trim().isEmpty()) {
-            ticket.setResolutionNotes(notes);
+        if (status.equalsIgnoreCase("Reopened") || status.equalsIgnoreCase("Open")) {
+            if (!ticket.getStatus().equalsIgnoreCase("Resolved") && !ticket.getStatus().equalsIgnoreCase("Closed")) {
+                throw new BadRequestException("Only resolved or closed tickets can be reopened.");
+            }
+            if (!ticket.getOwner().equalsIgnoreCase(user.getUserId()) && !user.getRole().equalsIgnoreCase("admin")) {
+                throw new BadRequestException("Only the complaint owner can reopen this ticket.");
+            }
+            ticket.setStatus("Reopened");
+            ticket.setResolutionNotes("");
+            ticket.setProofImage("");
+            ticket.setRating(null);
+        } else {
+            ticket.setStatus(status);
+            if (proofImage != null && !proofImage.trim().isEmpty()) {
+                ticket.setProofImage(proofImage);
+            }
+            if (resolutionNotes != null && !resolutionNotes.trim().isEmpty()) {
+                ticket.setResolutionNotes(resolutionNotes);
+            } else if (notes != null && !notes.trim().isEmpty()) {
+                ticket.setResolutionNotes(notes);
+            }
         }
         // If notes is provided but resolutionNotes is not, we can also use notes for resolutionNotes 
         // to maintain backwards compatibility, but the frontend explicitly sends resolutionNotes now.
@@ -365,7 +405,10 @@ public class TicketServiceImpl implements TicketService {
         String cleaned = clean(status);
         if (cleaned == null || cleaned.equalsIgnoreCase("All")) return null;
         if (cleaned.equalsIgnoreCase("Pending")) {
-            return List.of("Open", "Assigned", "In Progress");
+            return List.of("Open", "Assigned", "In Progress", "Reopened");
+        }
+        if (cleaned.equalsIgnoreCase("Open")) {
+            return List.of("Open", "Reopened");
         }
         return List.of(cleaned);
     }
@@ -425,7 +468,11 @@ public class TicketServiceImpl implements TicketService {
         List<Ticket> tickets = ticketRepository.findByOwnerOrderByCreatedDesc(ownerId);
         counts.put("All", (long) tickets.size());
         for (Ticket ticket : tickets) {
-            counts.computeIfPresent(ticket.getStatus(), (key, value) -> value + 1);
+            String status = ticket.getStatus();
+            if (status != null && status.equalsIgnoreCase("Reopened")) {
+                status = "Open";
+            }
+            counts.computeIfPresent(status, (key, value) -> value + 1);
         }
         return counts;
     }
