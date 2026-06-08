@@ -60,6 +60,7 @@ export default function TicketListPage() {
   // Role-aware base tickets
   const roleTickets = useMemo(() => {
     if (role === 'student') return state.tickets.filter(t => t.owner === profile.name || t.owner === profile.userId);
+    if (role === 'staff') return state.tickets.filter(t => t.assignee === profile.userId || t.assignee === profile.name);
     return state.tickets;
   }, [state.tickets, role, profile.name, profile.userId]);
 
