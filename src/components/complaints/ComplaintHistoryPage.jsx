@@ -57,7 +57,7 @@ export default function ComplaintHistoryPage() {
     sort: filters.sort,
   }), [filters, page]);
 
-  const { complaints, meta, statusCounts, loading, error } = useStudentComplaints(params);
+  const { complaints, meta, statusCounts, loading, error, refetch } = useStudentComplaints(params);
 
   const updateUrl = (next) => {
     const params = new URLSearchParams();
@@ -114,7 +114,7 @@ export default function ComplaintHistoryPage() {
           <ComplaintSkeleton count={4} />
         ) : complaints.length ? (
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 items-start">
-            {complaints.map(ticket => <ComplaintCard key={ticket.id} ticket={ticket} />)}
+            {complaints.map(ticket => <ComplaintCard key={ticket.id} ticket={ticket} onUpdate={refetch} />)}
           </div>
         ) : (
           <EmptyComplaintsState onCreate={() => navigate('/student/raise-complaint')} />

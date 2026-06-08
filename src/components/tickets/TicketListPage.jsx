@@ -28,7 +28,7 @@ const filterMeta = {
 
 function applyFilter(tickets, filterKey) {
   if (filterKey === 'all') return tickets;
-  if (filterKey === 'pending') return tickets.filter(t => ['Open', 'Assigned', 'In Progress'].includes(t.status));
+  if (filterKey === 'pending') return tickets.filter(t => ['Open', 'Assigned', 'In Progress', 'Reopened'].includes(t.status));
   if (filterKey === 'resolved') return tickets.filter(t => t.status === 'Resolved');
   if (filterKey === 'urgent') return tickets.filter(t => t.priority === 'Urgent');
   return tickets;

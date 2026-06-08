@@ -262,7 +262,7 @@ function simulateRequest(method, originalPath, body = null, isBlob = false) {
     }
     if (status && status !== 'All') {
       if (status === 'Active') {
-        list = list.filter(t => ['Open', 'Assigned', 'In Progress'].includes(t.status));
+        list = list.filter(t => ['Open', 'Assigned', 'In Progress', 'Reopened'].includes(t.status));
       } else {
         list = list.filter(t => t.status === status);
       }

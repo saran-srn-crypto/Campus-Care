@@ -38,7 +38,7 @@ export default function ComplaintsView() {
     return roleTickets.filter(t => {
       // Status grouping
       if (statusFilter === 'Active') {
-        if (!['Open', 'Assigned', 'In Progress'].includes(t.status)) return false;
+        if (!['Open', 'Assigned', 'In Progress', 'Reopened'].includes(t.status)) return false;
       } else if (statusFilter === 'Resolved') {
         if (t.status !== 'Resolved') return false;
       } else if (statusFilter === 'Urgent') {

@@ -8,6 +8,7 @@ export function statusClass(status = '') {
   const key = String(status).toLowerCase().replace(/\s+/g, '-');
   const map = {
     'open': 'bg-[#e8f1ff] text-[#175cd3]',
+    'reopened': 'bg-[#e8f1ff] text-[#175cd3]',
     'assigned': 'bg-[#f0eaff] text-purple',
     'in-progress': 'bg-[#fff7d6] text-[#946200]',
     'resolved': 'bg-[#e4f8f2] text-[#087443]',
@@ -52,8 +53,8 @@ export function sortTicketsByNewest(tickets) {
 export function getStats(tickets) {
   return {
     total: tickets.length,
-    open: tickets.filter(t => t.status === 'Open').length,
-    pending: tickets.filter(t => ['Open', 'Assigned', 'In Progress'].includes(t.status)).length,
+    open: tickets.filter(t => ['Open', 'Reopened'].includes(t.status)).length,
+    pending: tickets.filter(t => ['Open', 'Assigned', 'In Progress', 'Reopened'].includes(t.status)).length,
     resolved: tickets.filter(t => t.status === 'Resolved').length,
     closed: tickets.filter(t => t.status === 'Closed').length,
     urgent: tickets.filter(t => t.priority === 'Urgent').length,

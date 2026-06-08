@@ -4,7 +4,7 @@ import StatusBadge from '../common/StatusBadge';
 import ComplaintDetailsPanel from './ComplaintDetailsPanel';
 import { formatDate } from '../../utils/helpers';
 
-export default function ComplaintCard({ ticket }) {
+export default function ComplaintCard({ ticket, onUpdate }) {
   const [open, setOpen] = useState(false);
   const assignedStaff = ticket.assignedStaff || ticket.assignee || 'Unassigned';
 
@@ -70,7 +70,7 @@ export default function ComplaintCard({ ticket }) {
 
       {open && (
         <div className="border-t border-line animate-[slideDown_220ms_ease-out]">
-          <ComplaintDetailsPanel ticket={ticket} />
+          <ComplaintDetailsPanel ticket={ticket} onUpdate={onUpdate} />
         </div>
       )}
     </article>
