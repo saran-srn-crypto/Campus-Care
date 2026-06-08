@@ -6,7 +6,7 @@ import java.util.List;
 public interface TicketService {
     TicketDto createTicket(TicketCreateRequest request, String ownerEmail);
     List<TicketDto> getTicketsByRole(String email);
-    TicketDto getTicketDetails(String id);
+    TicketDto getTicketDetails(String id, String email);
     TicketDto updateTicket(String id, TicketUpdateRequest request, String email);
     TicketDto assignTicket(String id, String assigneeNameOrId, String email);
     TicketDto addComment(String id, String text, String email);

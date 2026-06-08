@@ -35,8 +35,8 @@ public class TicketController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Get detailed ticket info including MongoDB comments and history")
-    public ResponseEntity<TicketDto> getTicketDetails(@PathVariable String id) {
-        TicketDto ticketDto = ticketService.getTicketDetails(id);
+    public ResponseEntity<TicketDto> getTicketDetails(@PathVariable String id, Authentication authentication) {
+        TicketDto ticketDto = ticketService.getTicketDetails(id, authentication.getName());
         return ResponseEntity.ok(ticketDto);
     }
 

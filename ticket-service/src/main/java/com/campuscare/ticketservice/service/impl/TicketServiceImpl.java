@@ -101,8 +101,10 @@ public class TicketServiceImpl implements TicketService {
 
         if (role.equals("student")) {
             tickets = ticketRepository.findByOwnerOrderByCreatedDesc(user.getUserId());
+        } else if (role.equals("staff")) {
+            tickets = ticketRepository.findByAssigneeOrderByCreatedDesc(user.getUserId());
         } else {
-            // Staff, Warden, and Admin all see ALL tickets so student complaints are visible
+            // Warden and Admin see ALL tickets
             tickets = ticketRepository.findAllByOrderByCreatedDesc();
         }
 
@@ -110,9 +112,18 @@ public class TicketServiceImpl implements TicketService {
     }
 
     @Override
-    public TicketDto getTicketDetails(String id) {
+    public TicketDto getTicketDetails(String id, String email) {
         Ticket ticket = ticketRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Ticket not found with ID: " + id));
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User profile not found."));
+
+        if (user.getRole().equalsIgnoreCase("staff")) {
+            if (ticket.getAssignee() == null || !ticket.getAssignee().equalsIgnoreCase(user.getUserId())) {
+                throw new BadRequestException("You are not authorized to view this ticket.");
+            }
+        }
         return mapToDto(ticket);
     }
 
@@ -123,6 +134,10 @@ public class TicketServiceImpl implements TicketService {
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User profile not found."));
+
+        if (user.getRole().equalsIgnoreCase("staff")) {
+            throw new BadRequestException("Staff members are not allowed to update general ticket details.");
+        }
 
         if (request.getStatus() != null) {
             String newStatus = request.getStatus();
@@ -223,6 +238,12 @@ public class TicketServiceImpl implements TicketService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User profile not found."));
 
+        if (user.getRole().equalsIgnoreCase("staff")) {
+            if (ticket.getAssignee() == null || !ticket.getAssignee().equalsIgnoreCase(user.getUserId())) {
+                throw new BadRequestException("You are not authorized to comment on this ticket.");
+            }
+        }
+
         Comment comment = Comment.builder()
                 .ticketId(id)
                 .by(user.getName())
@@ -254,6 +275,12 @@ public class TicketServiceImpl implements TicketService {
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User profile not found."));
+
+        if (user.getRole().equalsIgnoreCase("staff")) {
+            if (ticket.getAssignee() == null || !ticket.getAssignee().equalsIgnoreCase(user.getUserId())) {
+                throw new BadRequestException("You can only solve/update status of tickets assigned to you.");
+            }
+        }
 
         if (status.equalsIgnoreCase("Reopened") || status.equalsIgnoreCase("Open")) {
             if (!ticket.getStatus().equalsIgnoreCase("Resolved") && !ticket.getStatus().equalsIgnoreCase("Closed")) {
@@ -302,6 +329,12 @@ public class TicketServiceImpl implements TicketService {
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User profile not found."));
+
+        if (user.getRole().equalsIgnoreCase("staff")) {
+            if (ticket.getAssignee() == null || !ticket.getAssignee().equalsIgnoreCase(user.getUserId())) {
+                throw new BadRequestException("You are not authorized to escalate this ticket.");
+            }
+        }
 
         ticket.setPriority("Urgent");
         ticket.setUpdatedAt(LocalDateTime.now());
