@@ -21,9 +21,9 @@ export function AuthProvider({ children }) {
     localStorage.setItem('campuscare-session', JSON.stringify(data));
   }, []);
 
-  const login = useCallback(async (email, password, role) => {
+  const login = useCallback(async (email, password) => {
     try {
-      const data = await api.post('/api/auth/login', { email, password, role });
+      const data = await api.post('/api/auth/login', { email, password });
 
       const token = data.accessToken || data.token;
       if (token) localStorage.setItem('campuscare-token', token);
@@ -51,7 +51,7 @@ export function AuthProvider({ children }) {
   const signup = useCallback(async (formData) => {
     try {
       await api.post('/api/auth/signup', formData);
-      return await login(formData.email, formData.password, formData.role);
+      return await login(formData.email, formData.password);
     } catch (error) {
       return { error: error.message || 'Registration failed' };
     }

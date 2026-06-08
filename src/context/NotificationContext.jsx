@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import { api } from '../services/apiHelper';
 import { useAuth } from '../hooks/useAuth';
 
@@ -9,6 +9,7 @@ export function NotificationProvider({ children }) {
   const [notifications, setNotifications] = useState([]);
   const [panelOpen, setPanelOpen] = useState(false);
   const [toast, setToast] = useState({ message: '', visible: false });
+  const markingReadRef = useRef(false);
 
   const fetchNotifications = useCallback(async () => {
     if (!isLoggedIn) return;
@@ -39,24 +40,27 @@ export function NotificationProvider({ children }) {
   }, [fetchNotifications]);
 
   const markAllRead = useCallback(async () => {
+    if (markingReadRef.current) return;
+    markingReadRef.current = true;
     try {
       await api.post('/api/notifications/read-all');
       await fetchNotifications();
     } catch (e) {
       console.error(e);
+    } finally {
+      markingReadRef.current = false;
     }
   }, [fetchNotifications]);
 
   const togglePanel = useCallback(async () => {
-    setPanelOpen(prev => {
-      const next = !prev;
-      if (next) {
-        // When opening the panel, mark all read on backend
-        markAllRead();
-      }
-      return next;
-    });
-  }, [markAllRead]);
+    setPanelOpen(prev => !prev);
+  }, []);
+
+  useEffect(() => {
+    if (panelOpen) {
+      markAllRead();
+    }
+  }, [panelOpen, markAllRead]);
 
   const showToast = useCallback((message) => {
     setToast({ message, visible: true });

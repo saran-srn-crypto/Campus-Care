@@ -1,7 +1,8 @@
 import { SEED_DATA } from '../utils/constants';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 const USE_MOCK = false; // Set to false to connect to the backend microservices again
+const pendingGetRequests = new Map();
 
 /* ─── Client-side In-memory Mock Database for Disconnected Mode ─── */
 let mockTickets = [...(SEED_DATA?.tickets || [])];
@@ -540,23 +541,42 @@ async function request(method, path, body = null, isBlob = false) {
     }
   }
 
-  const response = await fetch(`${BASE_URL}${path}`, options);
+  const url = `${BASE_URL}${path}`;
+  const requestKey = `${method}:${url}`;
 
-  if (!response.ok) {
-    let errorMsg = 'An error occurred';
-    try {
-      const errData = await response.json();
-      errorMsg = errData.message || errorMsg;
-    } catch {}
-    throw new Error(errorMsg);
+  if (method === 'GET' && pendingGetRequests.has(requestKey)) {
+    return pendingGetRequests.get(requestKey);
   }
 
-  if (isBlob) {
-    return response.blob();
+  const fetchPromise = fetch(url, options)
+    .then(async response => {
+      if (!response.ok) {
+        let errorMsg = 'An error occurred';
+        try {
+          const errData = await response.json();
+          errorMsg = errData.message || errorMsg;
+        } catch {}
+        throw new Error(errorMsg);
+      }
+
+      if (isBlob) {
+        return response.blob();
+      }
+
+      const text = await response.text();
+      return text ? JSON.parse(text) : null;
+    })
+    .finally(() => {
+      if (method === 'GET') {
+        pendingGetRequests.delete(requestKey);
+      }
+    });
+
+  if (method === 'GET') {
+    pendingGetRequests.set(requestKey, fetchPromise);
   }
 
-  const text = await response.text();
-  return text ? JSON.parse(text) : null;
+  return fetchPromise;
 }
 
 export const api = {

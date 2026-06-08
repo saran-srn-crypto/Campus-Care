@@ -3,15 +3,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useNotifications } from '../../hooks/useNotifications';
 import Button from '../common/Button';
-import { User, ShieldCheck } from 'lucide-react';
-
-const portals = [
-  { value: 'user', label: 'User Portal', desc: 'Students, Staff & Wardens', icon: <User size={22} /> },
-  { value: 'admin', label: 'Admin Portal', desc: 'Campus Administrators', icon: <ShieldCheck size={22} /> },
-];
 
 export default function LoginForm() {
-  const [role, setRole] = useState('user');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { login } = useAuth();
@@ -21,7 +14,7 @@ export default function LoginForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await login(email, password, role);
+      const res = await login(email, password);
       if (res && res.error) {
         showToast(res.error);
       } else {
@@ -38,18 +31,7 @@ export default function LoginForm() {
       <div className="grid gap-2">
         <span className="text-sidebar-label text-xs font-bold uppercase">Secure access</span>
         <h1 id="loginTitle" className="m-0 text-[clamp(1.8rem,4vw,2.6rem)] leading-tight">Sign in to CampusCare</h1>
-        <p className="m-0 text-muted leading-relaxed">Select a portal and use your registered credentials.</p>
-      </div>
-
-      <div className="grid grid-cols-2 gap-2.5" aria-label="Available login portals">
-        {portals.map(p => (
-          <button key={p.value} type="button" onClick={() => setRole(p.value)}
-            className={`min-h-24 grid gap-1 p-3.5 text-left rounded-lg border transition-all ${role === p.value ? 'border-primary shadow-[0_0_0_3px_rgba(31,87,195,0.12)] bg-[#f0f5ff]' : 'border-line bg-white/86 hover:border-[#9ab1d5]'} text-ink`}>
-            <span className={`${role === p.value ? 'text-primary' : 'text-muted'}`}>{p.icon}</span>
-            <strong>{p.label}</strong>
-            <span className="text-muted text-sm leading-relaxed">{p.desc}</span>
-          </button>
-        ))}
+        <p className="m-0 text-muted leading-relaxed">Use your registered credentials to access the system.</p>
       </div>
 
       <form className="grid gap-3.5" onSubmit={handleSubmit}>
