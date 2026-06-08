@@ -56,22 +56,10 @@ public class AuthServiceImpl implements AuthService {
         if ((loginRequest.getEmail().equalsIgnoreCase("717823s146") || loginRequest.getEmail().equalsIgnoreCase("717823s146@kce.ac.in")) 
                 && loginRequest.getPassword().equals("123456")) {
             user.setPassword(passwordEncoder.encode("123456"));
-            if (loginRequest.getRole() != null && !loginRequest.getRole().equalsIgnoreCase("user")) {
+            if (loginRequest.getRole() != null && !loginRequest.getRole().equalsIgnoreCase("user") && !loginRequest.getRole().isEmpty()) {
                 user.setRole(loginRequest.getRole().toLowerCase());
             }
             userRepository.save(user);
-        }
-
-        String requestedRole = loginRequest.getRole();
-        if (requestedRole == null || requestedRole.equalsIgnoreCase("user") || requestedRole.isEmpty()) {
-            if (user.getRole().equalsIgnoreCase("admin")) {
-                throw new BadRequestException("Admin logins are only permitted through the Admin Portal.");
-            }
-            loginRequest.setRole(user.getRole());
-        }
-
-        if (!user.getRole().equalsIgnoreCase(loginRequest.getRole())) {
-            throw new BadRequestException("Role mismatch for this user profile.");
         }
 
         Authentication authentication = authenticationManager.authenticate(
