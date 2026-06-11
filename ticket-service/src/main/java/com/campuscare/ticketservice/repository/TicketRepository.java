@@ -11,4 +11,7 @@ public interface TicketRepository extends JpaRepository<Ticket, String>, JpaSpec
     List<Ticket> findAllByOrderByCreatedDesc();
     List<Ticket> findByOwnerOrderByCreatedDesc(String ownerId);
     List<Ticket> findByAssigneeOrderByCreatedDesc(String assigneeId);
+    List<Ticket> findByAssignedStaffIdOrderByCreatedDesc(String staffId);
+    List<Ticket> findByCreatedByOrderByCreatedDesc(String createdBy);
+    List<Ticket> findByStatusOrderByCreatedDesc(String status);
 }

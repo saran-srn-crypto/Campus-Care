@@ -15,9 +15,12 @@ public class TicketDto {
     private String priority;
     private String status;
     private String owner;
+    private String createdBy;
     private String location;
     private String assignee;
     private String assignedStaff;
+    private String assignedStaffId;
+    private String assignedByWardenId;
     private String department;
     private LocalDate created;
     private LocalDate due;
@@ -35,16 +38,19 @@ public class TicketDto {
     public TicketDto() {
     }
 
-    public TicketDto(String id, String title, String category, String priority, String status, String owner, String location, String assignee, String assignedStaff, String department, LocalDate created, LocalDate due, String description, List<String> attachments, String resolutionNotes, String proofImage, LocalDateTime updatedAt, Double rating, List<Comment> comments, List<TimelineEntry> timeline, List<TicketActivityLog> ticketActivityLogs, List<StatusHistoryEntry> statusHistory) {
+    public TicketDto(String id, String title, String category, String priority, String status, String owner, String createdBy, String location, String assignee, String assignedStaff, String assignedStaffId, String assignedByWardenId, String department, LocalDate created, LocalDate due, String description, List<String> attachments, String resolutionNotes, String proofImage, LocalDateTime updatedAt, Double rating, List<Comment> comments, List<TimelineEntry> timeline, List<TicketActivityLog> ticketActivityLogs, List<StatusHistoryEntry> statusHistory) {
         this.id = id;
         this.title = title;
         this.category = category;
         this.priority = priority;
         this.status = status;
         this.owner = owner;
+        this.createdBy = createdBy;
         this.location = location;
         this.assignee = assignee;
         this.assignedStaff = assignedStaff;
+        this.assignedStaffId = assignedStaffId;
+        this.assignedByWardenId = assignedByWardenId;
         this.department = department;
         this.created = created;
         this.due = due;
@@ -72,12 +78,18 @@ public class TicketDto {
     public void setStatus(String status) { this.status = status; }
     public String getOwner() { return owner; }
     public void setOwner(String owner) { this.owner = owner; }
+    public String getCreatedBy() { return createdBy; }
+    public void setCreatedBy(String createdBy) { this.createdBy = createdBy; }
     public String getLocation() { return location; }
     public void setLocation(String location) { this.location = location; }
     public String getAssignee() { return assignee; }
     public void setAssignee(String assignee) { this.assignee = assignee; }
     public String getAssignedStaff() { return assignedStaff; }
     public void setAssignedStaff(String assignedStaff) { this.assignedStaff = assignedStaff; }
+    public String getAssignedStaffId() { return assignedStaffId; }
+    public void setAssignedStaffId(String assignedStaffId) { this.assignedStaffId = assignedStaffId; }
+    public String getAssignedByWardenId() { return assignedByWardenId; }
+    public void setAssignedByWardenId(String assignedByWardenId) { this.assignedByWardenId = assignedByWardenId; }
     public String getDepartment() { return department; }
     public void setDepartment(String department) { this.department = department; }
     public LocalDate getCreated() { return created; }
@@ -116,9 +128,12 @@ public class TicketDto {
         private String priority;
         private String status;
         private String owner;
+        private String createdBy;
         private String location;
         private String assignee;
         private String assignedStaff;
+        private String assignedStaffId;
+        private String assignedByWardenId;
         private String department;
         private LocalDate created;
         private LocalDate due;
@@ -139,9 +154,12 @@ public class TicketDto {
         public Builder priority(String priority) { this.priority = priority; return this; }
         public Builder status(String status) { this.status = status; return this; }
         public Builder owner(String owner) { this.owner = owner; return this; }
+        public Builder createdBy(String createdBy) { this.createdBy = createdBy; return this; }
         public Builder location(String location) { this.location = location; return this; }
         public Builder assignee(String assignee) { this.assignee = assignee; return this; }
         public Builder assignedStaff(String assignedStaff) { this.assignedStaff = assignedStaff; return this; }
+        public Builder assignedStaffId(String assignedStaffId) { this.assignedStaffId = assignedStaffId; return this; }
+        public Builder assignedByWardenId(String assignedByWardenId) { this.assignedByWardenId = assignedByWardenId; return this; }
         public Builder department(String department) { this.department = department; return this; }
         public Builder created(LocalDate created) { this.created = created; return this; }
         public Builder due(LocalDate due) { this.due = due; return this; }
@@ -157,7 +175,7 @@ public class TicketDto {
         public Builder statusHistory(List<StatusHistoryEntry> statusHistory) { this.statusHistory = statusHistory; return this; }
 
         public TicketDto build() {
-            return new TicketDto(id, title, category, priority, status, owner, location, assignee, assignedStaff, department, created, due, description, attachments, resolutionNotes, proofImage, updatedAt, rating, comments, timeline, ticketActivityLogs, statusHistory);
+            return new TicketDto(id, title, category, priority, status, owner, createdBy, location, assignee, assignedStaff, assignedStaffId, assignedByWardenId, department, created, due, description, attachments, resolutionNotes, proofImage, updatedAt, rating, comments, timeline, ticketActivityLogs, statusHistory);
         }
     }
 }

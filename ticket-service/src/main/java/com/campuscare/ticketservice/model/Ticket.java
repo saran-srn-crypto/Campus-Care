@@ -27,6 +27,9 @@ public class Ticket {
     @Column(name = "owner_id", nullable = false, length = 50)
     private String owner;
 
+    @Column(name = "created_by", length = 50)
+    private String createdBy;
+
     @Column(length = 200)
     private String location;
 
@@ -35,6 +38,12 @@ public class Ticket {
 
     @Column(name = "assigned_staff", length = 150)
     private String assignedStaff;
+
+    @Column(name = "assigned_staff_id", length = 50)
+    private String assignedStaffId;
+
+    @Column(name = "assigned_by_warden_id", length = 50)
+    private String assignedByWardenId;
 
     @Column(length = 100)
     private String department;
@@ -107,12 +116,18 @@ public class Ticket {
     public void setStatus(String status) { this.status = status; }
     public String getOwner() { return owner; }
     public void setOwner(String owner) { this.owner = owner; }
+    public String getCreatedBy() { return createdBy; }
+    public void setCreatedBy(String createdBy) { this.createdBy = createdBy; }
     public String getLocation() { return location; }
     public void setLocation(String location) { this.location = location; }
     public String getAssignee() { return assignee; }
     public void setAssignee(String assignee) { this.assignee = assignee; }
     public String getAssignedStaff() { return assignedStaff; }
     public void setAssignedStaff(String assignedStaff) { this.assignedStaff = assignedStaff; }
+    public String getAssignedStaffId() { return assignedStaffId; }
+    public void setAssignedStaffId(String assignedStaffId) { this.assignedStaffId = assignedStaffId; }
+    public String getAssignedByWardenId() { return assignedByWardenId; }
+    public void setAssignedByWardenId(String assignedByWardenId) { this.assignedByWardenId = assignedByWardenId; }
     public String getDepartment() { return department; }
     public void setDepartment(String department) { this.department = department; }
     public LocalDate getCreated() { return created; }
@@ -143,9 +158,12 @@ public class Ticket {
         private String priority;
         private String status;
         private String owner;
+        private String createdBy;
         private String location;
         private String assignee;
         private String assignedStaff;
+        private String assignedStaffId;
+        private String assignedByWardenId;
         private String department;
         private LocalDate created;
         private LocalDate due;
@@ -162,9 +180,12 @@ public class Ticket {
         public Builder priority(String priority) { this.priority = priority; return this; }
         public Builder status(String status) { this.status = status; return this; }
         public Builder owner(String owner) { this.owner = owner; return this; }
+        public Builder createdBy(String createdBy) { this.createdBy = createdBy; return this; }
         public Builder location(String location) { this.location = location; return this; }
         public Builder assignee(String assignee) { this.assignee = assignee; return this; }
         public Builder assignedStaff(String assignedStaff) { this.assignedStaff = assignedStaff; return this; }
+        public Builder assignedStaffId(String assignedStaffId) { this.assignedStaffId = assignedStaffId; return this; }
+        public Builder assignedByWardenId(String assignedByWardenId) { this.assignedByWardenId = assignedByWardenId; return this; }
         public Builder department(String department) { this.department = department; return this; }
         public Builder created(LocalDate created) { this.created = created; return this; }
         public Builder due(LocalDate due) { this.due = due; return this; }
@@ -176,7 +197,11 @@ public class Ticket {
         public Builder rating(Double rating) { this.rating = rating; return this; }
 
         public Ticket build() {
-            return new Ticket(id, title, category, priority, status, owner, location, assignee, assignedStaff, department, created, due, description, attachments, resolutionNotes, proofImage, updatedAt, rating);
+            Ticket ticket = new Ticket(id, title, category, priority, status, owner, location, assignee, assignedStaff, department, created, due, description, attachments, resolutionNotes, proofImage, updatedAt, rating);
+            ticket.setCreatedBy(createdBy);
+            ticket.setAssignedStaffId(assignedStaffId);
+            ticket.setAssignedByWardenId(assignedByWardenId);
+            return ticket;
         }
     }
 }

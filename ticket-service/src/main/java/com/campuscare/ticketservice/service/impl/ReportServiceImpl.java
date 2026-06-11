@@ -55,9 +55,9 @@ public class ReportServiceImpl implements ReportService {
 
             // Summary Statistics block
             long total = tickets.size();
-            long resolved = tickets.stream().filter(t -> t.getStatus().equalsIgnoreCase("Resolved")).count();
-            long closed = tickets.stream().filter(t -> t.getStatus().equalsIgnoreCase("Closed")).count();
-            long inProgress = tickets.stream().filter(t -> t.getStatus().equalsIgnoreCase("In Progress")).count();
+            long resolved = tickets.stream().filter(t -> isStatus(t.getStatus(), "Resolved", "RESOLVED")).count();
+            long closed = tickets.stream().filter(t -> isStatus(t.getStatus(), "Closed", "CLOSED")).count();
+            long inProgress = tickets.stream().filter(t -> isStatus(t.getStatus(), "In Progress", "IN_PROGRESS")).count();
             long open = total - resolved - closed - inProgress;
 
             Paragraph stats = new Paragraph(
@@ -125,9 +125,9 @@ public class ReportServiceImpl implements ReportService {
                 PdfPCell statusCell = new PdfPCell(new Phrase(t.getStatus(), bodyFont));
                 statusCell.setHorizontalAlignment(Element.ALIGN_CENTER);
                 statusCell.setPadding(5);
-                if (t.getStatus().equalsIgnoreCase("Resolved") || t.getStatus().equalsIgnoreCase("Closed")) {
+                if (isStatus(t.getStatus(), "Resolved", "RESOLVED", "Closed", "CLOSED")) {
                     statusCell.setBackgroundColor(new Color(230, 245, 230));
-                } else if (t.getStatus().equalsIgnoreCase("In Progress")) {
+                } else if (isStatus(t.getStatus(), "In Progress", "IN_PROGRESS")) {
                     statusCell.setBackgroundColor(new Color(230, 242, 255));
                 } else {
                     statusCell.setBackgroundColor(new Color(255, 255, 230));
@@ -143,5 +143,13 @@ public class ReportServiceImpl implements ReportService {
         }
 
         return new ByteArrayInputStream(out.toByteArray());
+    }
+
+    private boolean isStatus(String actual, String... expected) {
+        if (actual == null) return false;
+        for (String value : expected) {
+            if (actual.equalsIgnoreCase(value)) return true;
+        }
+        return false;
     }
 }

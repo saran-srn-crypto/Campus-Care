@@ -14,6 +14,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -64,11 +65,14 @@ public class TicketServiceImpl implements TicketService {
                 .title(request.getTitle())
                 .category(request.getCategory())
                 .priority(request.getPriority())
-                .status("Open")
+                .status(TicketStatus.PENDING_ASSIGNMENT.name())
                 .owner(owner.getUserId())
+                .createdBy(owner.getUserId())
                 .location(request.getLocation())
-                .assignee("")
-                .assignedStaff("")
+                .assignee(null)
+                .assignedStaff(null)
+                .assignedStaffId(null)
+                .assignedByWardenId(null)
                 .department(request.getCategory())
                 .created(LocalDate.now())
                 .due(LocalDate.now().plusDays(7))
@@ -83,7 +87,7 @@ public class TicketServiceImpl implements TicketService {
         logService.logActivity("TICKET_CREATED", owner.getUserId(), "Ticket created: " + ticketId);
         createTimelineEntry(ticketId, "Ticket opened", "Student submitted the complaint.");
         createTicketActivityLog(ticketId, "Ticket Opened", owner.getUserId(), "Student submitted the complaint.");
-        createStatusHistoryEntry(ticketId, "Open", owner.getUserId(), "Ticket opened.");
+        createStatusHistoryEntry(ticketId, TicketStatus.PENDING_ASSIGNMENT.name(), owner.getUserId(), "Ticket opened and waiting for warden assignment.");
 
         createNotification("New Ticket Created: " + ticketId, "A new complaint in category " + request.getCategory() + " has been submitted.", "admin");
         createNotification("New Ticket Created: " + ticketId, "A new complaint in category " + request.getCategory() + " has been submitted.", "warden");
@@ -97,14 +101,28 @@ public class TicketServiceImpl implements TicketService {
                 .orElseThrow(() -> new ResourceNotFoundException("User profile not found."));
 
         List<Ticket> tickets;
-        String role = user.getRole().toLowerCase();
+        String role = user.getRole() != null ? user.getRole().trim().toLowerCase() : "";
 
         if (role.equals("student")) {
             tickets = ticketRepository.findByOwnerOrderByCreatedDesc(user.getUserId());
         } else if (role.equals("staff")) {
-            tickets = ticketRepository.findByAssigneeOrderByCreatedDesc(user.getUserId());
+            // Staff should only see tickets explicitly assigned to them by either ID or Name
+            Specification<Ticket> staffSpec = (root, query, cb) -> {
+                String staffId = user.getUserId();
+                String staffName = user.getName();
+                Predicate isAssigned = cb.or(
+                    cb.equal(root.get("assignedStaffId"), staffId),
+                    cb.equal(root.get("assignee"), staffId),
+                    cb.equal(root.get("assignedStaff"), staffId),
+                    cb.equal(root.get("assignedStaff"), staffName),
+                    cb.equal(root.get("assignee"), staffName)
+                );
+                Predicate isNotPending = cb.notEqual(root.get("status"), TicketStatus.PENDING_ASSIGNMENT.name());
+                return cb.and(isAssigned, isNotPending);
+            };
+            tickets = ticketRepository.findAll(staffSpec, Sort.by(Sort.Direction.DESC, "created"));
         } else {
-            // Warden and Admin see ALL tickets
+            // Wardens and admins can review the full queue, including pending assignment tickets.
             tickets = ticketRepository.findAllByOrderByCreatedDesc();
         }
 
@@ -115,15 +133,8 @@ public class TicketServiceImpl implements TicketService {
     public TicketDto getTicketDetails(String id, String email) {
         Ticket ticket = ticketRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Ticket not found with ID: " + id));
-
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("User profile not found."));
-
-        if (user.getRole().equalsIgnoreCase("staff")) {
-            if (ticket.getAssignee() == null || !ticket.getAssignee().equalsIgnoreCase(user.getUserId())) {
-                throw new BadRequestException("You are not authorized to view this ticket.");
-            }
-        }
+        User user = resolveUser(email);
+        validateCanViewTicket(ticket, user);
         return mapToDto(ticket);
     }
 
@@ -134,10 +145,7 @@ public class TicketServiceImpl implements TicketService {
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User profile not found."));
-
-        if (user.getRole().equalsIgnoreCase("staff")) {
-            throw new BadRequestException("Staff members are not allowed to update general ticket details.");
-        }
+        validateCanModifyTicket(ticket, user);
 
         if (request.getStatus() != null) {
             String newStatus = request.getStatus();
@@ -145,7 +153,7 @@ public class TicketServiceImpl implements TicketService {
                 if (!ticket.getOwner().equalsIgnoreCase(user.getUserId()) && !user.getRole().equalsIgnoreCase("admin")) {
                     throw new BadRequestException("Only the complaint owner can close this ticket.");
                 }
-                ticket.setStatus("Closed");
+                ticket.setStatus(TicketStatus.CLOSED.name());
                 if (request.getRating() != null) {
                     ticket.setRating(request.getRating());
                 }
@@ -157,17 +165,21 @@ public class TicketServiceImpl implements TicketService {
                 createStatusHistoryEntry(id, "Closed", user.getUserId(), "Ticket closed.");
                 logService.logActivity("TICKET_CLOSED", user.getUserId(), "Ticket Closed: " + id);
                 createNotification("Ticket Closed: " + id, "Complaint has been closed and marked resolved.", ticket.getOwner());
-                if (ticket.getAssignee() != null && !ticket.getAssignee().trim().isEmpty()) {
-                    createNotification("Ticket Closed: " + id, "Complaint has been closed and marked resolved.", ticket.getAssignee());
+                if (ticket.getAssignedStaffId() != null && !ticket.getAssignedStaffId().trim().isEmpty()) {
+                    createNotification("Ticket Closed: " + id, "Complaint has been closed and marked resolved.", ticket.getAssignedStaffId());
                 }
             } else if (newStatus.equalsIgnoreCase("Reopened") || newStatus.equalsIgnoreCase("Open")) {
-                if (!ticket.getStatus().equalsIgnoreCase("Resolved") && !ticket.getStatus().equalsIgnoreCase("Closed")) {
+                if (!isStatus(ticket, TicketStatus.RESOLVED) && !isStatus(ticket, TicketStatus.CLOSED)) {
                     throw new BadRequestException("Only resolved or closed tickets can be reopened.");
                 }
                 if (!ticket.getOwner().equalsIgnoreCase(user.getUserId()) && !user.getRole().equalsIgnoreCase("admin")) {
                     throw new BadRequestException("Only the complaint owner can reopen this ticket.");
                 }
-                ticket.setStatus("Reopened");
+                ticket.setStatus(TicketStatus.PENDING_ASSIGNMENT.name());
+                ticket.setAssignedStaffId(null);
+                ticket.setAssignedByWardenId(null);
+                ticket.setAssignee(null);
+                ticket.setAssignedStaff(null);
                 ticket.setResolutionNotes("");
                 ticket.setProofImage("");
                 ticket.setRating(null);
@@ -179,8 +191,8 @@ public class TicketServiceImpl implements TicketService {
 
                 createNotification("Ticket Reopened: " + id, "Warden/Admin notice: Ticket has been reopened by student.", "admin");
                 createNotification("Ticket Reopened: " + id, "Warden/Admin notice: Ticket has been reopened by student.", "warden");
-                if (ticket.getAssignee() != null && !ticket.getAssignee().trim().isEmpty()) {
-                    createNotification("Ticket Reopened: " + id, "Notice: Assigned ticket has been reopened by student.", ticket.getAssignee());
+                if (ticket.getAssignedStaffId() != null && !ticket.getAssignedStaffId().trim().isEmpty()) {
+                    createNotification("Ticket Reopened: " + id, "Notice: Assigned ticket has been reopened by student.", ticket.getAssignedStaffId());
                 }
             } else {
                 throw new BadRequestException("Invalid status update request.");
@@ -207,25 +219,28 @@ public class TicketServiceImpl implements TicketService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User profile not found."));
 
-        if (!user.getRole().equalsIgnoreCase("admin") && !user.getRole().equalsIgnoreCase("warden")) {
-            throw new BadRequestException("Unauthorized role. Only admins and wardens can assign tickets.");
+        if (!isAdmin(user) && !isWarden(user)) {
+            throw new AccessDeniedException("Only admins and wardens can assign tickets.");
         }
 
-        ticket.setAssignee(assigneeNameOrId);
-        ticket.setAssignedStaff(assigneeNameOrId);
-        ticket.setStatus("Assigned");
+        User staff = resolveStaff(assigneeNameOrId);
+        ticket.setAssignee(staff.getUserId());
+        ticket.setAssignedStaff(staff.getName());
+        ticket.setAssignedStaffId(staff.getUserId());
+        ticket.setAssignedByWardenId(user.getUserId());
+        ticket.setStatus(TicketStatus.ASSIGNED.name());
         ticket.setDue(LocalDate.now().plusDays(3));
         ticket.setUpdatedAt(LocalDateTime.now());
 
         Ticket saved = ticketRepository.save(ticket);
 
-        logService.logActivity("TICKET_ASSIGNED", user.getUserId(), "Ticket " + id + " assigned to: " + assigneeNameOrId);
-        createTimelineEntry(id, "Ticket assigned", "Assigned to staff technician: " + assigneeNameOrId);
-        createTicketActivityLog(id, "Ticket Assigned", user.getUserId(), "Assigned to staff: " + assigneeNameOrId);
-        createStatusHistoryEntry(id, "Assigned", user.getUserId(), "Assigned to " + assigneeNameOrId);
+        logService.logActivity("TICKET_ASSIGNED", user.getUserId(), "Ticket " + id + " assigned to: " + staff.getUserId());
+        createTimelineEntry(id, "Ticket assigned", "Assigned to staff technician: " + staff.getName());
+        createTicketActivityLog(id, "Ticket Assigned", user.getUserId(), "Assigned to staff: " + staff.getUserId());
+        createStatusHistoryEntry(id, TicketStatus.ASSIGNED.name(), user.getUserId(), "Assigned to " + staff.getUserId());
 
-        createNotification("Ticket Assigned: " + id, "Your complaint has been assigned to technician: " + assigneeNameOrId, ticket.getOwner());
-        createNotification("New Assignment: " + id, "You have been assigned a new complaint: " + ticket.getTitle(), assigneeNameOrId);
+        createNotification("Ticket Assigned: " + id, "Your complaint has been assigned to technician: " + staff.getName(), ticket.getOwner());
+        createNotification("New Assignment: " + id, "You have been assigned a new complaint: " + ticket.getTitle(), staff.getUserId());
 
         return mapToDto(saved);
     }
@@ -237,12 +252,7 @@ public class TicketServiceImpl implements TicketService {
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User profile not found."));
-
-        if (user.getRole().equalsIgnoreCase("staff")) {
-            if (ticket.getAssignee() == null || !ticket.getAssignee().equalsIgnoreCase(user.getUserId())) {
-                throw new BadRequestException("You are not authorized to comment on this ticket.");
-            }
-        }
+        validateCanViewTicket(ticket, user);
 
         Comment comment = Comment.builder()
                 .ticketId(id)
@@ -257,8 +267,8 @@ public class TicketServiceImpl implements TicketService {
         logService.logActivity("TICKET_COMMENT_ADDED", user.getUserId(), "Added comment to ticket: " + id);
 
         if (user.getRole().equalsIgnoreCase("student")) {
-            if (ticket.getAssignee() != null && !ticket.getAssignee().trim().isEmpty()) {
-                createNotification("New comment on " + id, "Student added a comment: " + text, ticket.getAssignee());
+            if (ticket.getAssignedStaffId() != null && !ticket.getAssignedStaffId().trim().isEmpty()) {
+                createNotification("New comment on " + id, "Student added a comment: " + text, ticket.getAssignedStaffId());
             }
             createNotification("New comment on " + id, "Student added a comment: " + text, "admin");
         } else {
@@ -275,26 +285,32 @@ public class TicketServiceImpl implements TicketService {
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User profile not found."));
-
-        if (user.getRole().equalsIgnoreCase("staff")) {
-            if (ticket.getAssignee() == null || !ticket.getAssignee().equalsIgnoreCase(user.getUserId())) {
-                throw new BadRequestException("You can only solve/update status of tickets assigned to you.");
-            }
-        }
+        validateCanModifyTicket(ticket, user);
 
         if (status.equalsIgnoreCase("Reopened") || status.equalsIgnoreCase("Open")) {
-            if (!ticket.getStatus().equalsIgnoreCase("Resolved") && !ticket.getStatus().equalsIgnoreCase("Closed")) {
+            if (!isStatus(ticket, TicketStatus.RESOLVED) && !isStatus(ticket, TicketStatus.CLOSED)) {
                 throw new BadRequestException("Only resolved or closed tickets can be reopened.");
             }
             if (!ticket.getOwner().equalsIgnoreCase(user.getUserId()) && !user.getRole().equalsIgnoreCase("admin")) {
                 throw new BadRequestException("Only the complaint owner can reopen this ticket.");
             }
-            ticket.setStatus("Reopened");
+            ticket.setStatus(TicketStatus.PENDING_ASSIGNMENT.name());
+            ticket.setAssignedStaffId(null);
+            ticket.setAssignedByWardenId(null);
+            ticket.setAssignee(null);
+            ticket.setAssignedStaff(null);
             ticket.setResolutionNotes("");
             ticket.setProofImage("");
             ticket.setRating(null);
         } else {
-            ticket.setStatus(status);
+            TicketStatus nextStatus = parseWorkflowStatus(status);
+            if (isStaff(user) && !(nextStatus == TicketStatus.IN_PROGRESS || nextStatus == TicketStatus.RESOLVED)) {
+                throw new AccessDeniedException("Staff can only mark assigned tickets as in progress or resolved.");
+            }
+            if (nextStatus == TicketStatus.CLOSED && !isAdmin(user) && !isWarden(user) && !ticket.getOwner().equalsIgnoreCase(user.getUserId())) {
+                throw new AccessDeniedException("Only admins, wardens, or the ticket owner can close this ticket.");
+            }
+            ticket.setStatus(nextStatus.name());
             if (proofImage != null && !proofImage.trim().isEmpty()) {
                 ticket.setProofImage(proofImage);
             }
@@ -315,7 +331,7 @@ public class TicketServiceImpl implements TicketService {
         String timelineNote = (notes != null && !notes.trim().isEmpty()) ? notes : "Status changed by " + user.getName();
         createTimelineEntry(id, "Status updated: " + status, timelineNote);
         createTicketActivityLog(id, "Status Updated", user.getUserId(), timelineNote);
-        createStatusHistoryEntry(id, status, user.getUserId(), timelineNote);
+        createStatusHistoryEntry(id, ticket.getStatus(), user.getUserId(), timelineNote);
 
         createNotification("Ticket Status Updated: " + id, "Your complaint status is now: " + status, ticket.getOwner());
 
@@ -329,12 +345,6 @@ public class TicketServiceImpl implements TicketService {
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User profile not found."));
-
-        if (user.getRole().equalsIgnoreCase("staff")) {
-            if (ticket.getAssignee() == null || !ticket.getAssignee().equalsIgnoreCase(user.getUserId())) {
-                throw new BadRequestException("You are not authorized to escalate this ticket.");
-            }
-        }
 
         ticket.setPriority("Urgent");
         ticket.setUpdatedAt(LocalDateTime.now());
@@ -438,12 +448,12 @@ public class TicketServiceImpl implements TicketService {
         String cleaned = clean(status);
         if (cleaned == null || cleaned.equalsIgnoreCase("All")) return null;
         if (cleaned.equalsIgnoreCase("Pending")) {
-            return List.of("Open", "Assigned", "In Progress", "Reopened");
+            return List.of(TicketStatus.PENDING_ASSIGNMENT.name(), TicketStatus.ASSIGNED.name(), TicketStatus.IN_PROGRESS.name());
         }
         if (cleaned.equalsIgnoreCase("Open")) {
-            return List.of("Open", "Reopened");
+            return List.of(TicketStatus.PENDING_ASSIGNMENT.name());
         }
-        return List.of(cleaned);
+        return List.of(parseWorkflowStatus(cleaned).name());
     }
 
     private String clean(String value) {
@@ -502,8 +512,10 @@ public class TicketServiceImpl implements TicketService {
         counts.put("All", (long) tickets.size());
         for (Ticket ticket : tickets) {
             String status = ticket.getStatus();
-            if (status != null && status.equalsIgnoreCase("Reopened")) {
+            if (status != null && status.equalsIgnoreCase(TicketStatus.PENDING_ASSIGNMENT.name())) {
                 status = "Open";
+            } else if (status != null) {
+                status = displayStatus(status);
             }
             counts.computeIfPresent(status, (key, value) -> value + 1);
         }
@@ -578,9 +590,12 @@ public class TicketServiceImpl implements TicketService {
                 .priority(ticket.getPriority())
                 .status(ticket.getStatus())
                 .owner(ticket.getOwner())
+                .createdBy(ticket.getCreatedBy())
                 .location(ticket.getLocation())
                 .assignee(ticket.getAssignee())
                 .assignedStaff(assignedStaff)
+                .assignedStaffId(ticket.getAssignedStaffId())
+                .assignedByWardenId(ticket.getAssignedByWardenId())
                 .department(ticket.getDepartment())
                 .created(ticket.getCreated())
                 .due(ticket.getDue())
@@ -595,5 +610,102 @@ public class TicketServiceImpl implements TicketService {
                 .ticketActivityLogs(activityLogs)
                 .statusHistory(statusHistory)
                 .build();
+    }
+
+    private User resolveUser(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User profile not found."));
+    }
+
+    private User resolveStaff(String staffNameOrId) {
+        String cleaned = clean(staffNameOrId);
+        if (cleaned == null) {
+            throw new BadRequestException("Staff ID is required for assignment.");
+        }
+        User staff = userRepository.findByUserId(cleaned)
+                .or(() -> userRepository.findByEmail(cleaned))
+                .orElseGet(() -> userRepository.findAll().stream()
+                        .filter(user -> cleaned.equalsIgnoreCase(user.getName()))
+                        .findFirst()
+                        .orElseThrow(() -> new ResourceNotFoundException("Staff profile not found: " + cleaned)));
+        if (!isStaff(staff)) {
+            throw new BadRequestException("Selected user is not a staff member.");
+        }
+        return staff;
+    }
+
+    private void validateCanViewTicket(Ticket ticket, User user) {
+        if (isAdmin(user) || isWarden(user)) return;
+        if (isStudent(user) && user.getUserId().equalsIgnoreCase(ticket.getOwner())) return;
+        if (isStaff(user)) {
+            // Staff can view only tickets assigned to them and not pending assignment
+            if (isAssignedTo(ticket, user) && !TicketStatus.PENDING_ASSIGNMENT.name().equalsIgnoreCase(ticket.getStatus())) {
+                return;
+            }
+        }
+        throw new AccessDeniedException("You are not allowed to access this ticket.");
+    }
+
+    private void validateCanModifyTicket(Ticket ticket, User user) {
+        validateCanViewTicket(ticket, user);
+        if (isStaff(user) && !isAssignedTo(ticket, user)) {
+            throw new AccessDeniedException("Staff can only modify tickets assigned to them.");
+        }
+    }
+
+    private boolean isAssignedTo(Ticket ticket, User user) {
+        String staffId = user.getUserId();
+        return equalsIgnoreCase(ticket.getAssignedStaffId(), staffId)
+                || equalsIgnoreCase(ticket.getAssignee(), staffId)
+                || equalsIgnoreCase(ticket.getAssignedStaff(), staffId)
+                || equalsIgnoreCase(ticket.getAssignedStaff(), user.getName());
+    }
+
+    private boolean isStatus(Ticket ticket, TicketStatus status) {
+        return ticket.getStatus() != null && ticket.getStatus().equalsIgnoreCase(status.name());
+    }
+
+    private TicketStatus parseWorkflowStatus(String status) {
+        String cleaned = clean(status);
+        if (cleaned == null) {
+            throw new BadRequestException("Status is required.");
+        }
+        String normalized = cleaned.trim().replace(' ', '_').toUpperCase();
+        try {
+            return TicketStatus.valueOf(normalized);
+        } catch (IllegalArgumentException ex) {
+            throw new BadRequestException("Invalid ticket status: " + status);
+        }
+    }
+
+    private String displayStatus(String status) {
+        try {
+            String name = TicketStatus.valueOf(status).name().toLowerCase().replace('_', ' ');
+            return java.util.Arrays.stream(name.split(" "))
+                    .map(part -> part.substring(0, 1).toUpperCase() + part.substring(1))
+                    .collect(Collectors.joining(" "));
+        } catch (Exception ex) {
+            return status;
+        }
+    }
+
+    private boolean equalsIgnoreCase(String left, String right) {
+        return left != null && right != null && left.equalsIgnoreCase(right);
+    }
+
+    private boolean isStudent(User user) {
+        return user.getRole() != null && user.getRole().equalsIgnoreCase("student");
+    }
+
+    private boolean isStaff(User user) {
+        return user.getRole() != null && user.getRole().equalsIgnoreCase("staff");
+    }
+
+    private boolean isWarden(User user) {
+        return user.getRole() != null && user.getRole().equalsIgnoreCase("warden");
+    }
+
+    private boolean isAdmin(User user) {
+        return user.getRole() != null && user.getRole().equalsIgnoreCase("admin");
     }
 }

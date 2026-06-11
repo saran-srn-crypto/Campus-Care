@@ -61,6 +61,17 @@ public class TicketController {
         return ResponseEntity.ok(updated);
     }
 
+    @PostMapping("/warden/assign-ticket")
+    @Operation(summary = "Warden assignment endpoint")
+    public ResponseEntity<TicketDto> assignTicketByWarden(
+            @RequestBody Map<String, String> payload,
+            Authentication authentication) {
+        String ticketId = payload.get("ticketId");
+        String staffId = payload.get("staffId");
+        TicketDto updated = ticketService.assignTicket(ticketId, staffId, authentication.getName());
+        return ResponseEntity.ok(updated);
+    }
+
     @PostMapping("/{id}/comments")
     @Operation(summary = "Add a feedback comment to a ticket")
     public ResponseEntity<TicketDto> addComment(
