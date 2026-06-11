@@ -17,17 +17,31 @@ export default function StaffDashboard() {
   const staffName = profile.name;
 
   const staffTickets = React.useMemo(() => {
-    return state.tickets.filter(t => t.assignee === staffName);
-  }, [state.tickets, staffName]);
+    return state.tickets.filter(t => 
+      t.assignedStaffId === profile.userId ||
+      t.assignee === profile.userId ||
+      t.assignedStaff === profile.name ||
+      t.assignee === profile.name
+    );
+  }, [state.tickets, profile.userId, profile.name]);
 
   const stats = getStats(staffTickets);
   const selectedTicket = getSelectedTicket();
 
   const filteredTickets = React.useMemo(() => {
     return staffTickets.filter(t => {
-      const s = state.filters.staffStatus === 'All' || t.status === state.filters.staffStatus;
-      const p = state.filters.staffPriority === 'All' || t.priority === state.filters.staffPriority;
-      const c = state.filters.staffCategory === 'All' || t.category === state.filters.staffCategory;
+      const tStatus = (t.status || '').toLowerCase().replace(/_/g, ' ').trim();
+      const fStatus = (state.filters.staffStatus || '').toLowerCase().replace(/_/g, ' ').trim();
+      const s = state.filters.staffStatus === 'All' || tStatus === fStatus;
+
+      const tPriority = (t.priority || '').toLowerCase().trim();
+      const fPriority = (state.filters.staffPriority || '').toLowerCase().trim();
+      const p = state.filters.staffPriority === 'All' || tPriority === fPriority;
+
+      const tCategory = (t.category || '').toLowerCase().trim();
+      const fCategory = (state.filters.staffCategory || '').toLowerCase().trim();
+      const c = state.filters.staffCategory === 'All' || tCategory === fCategory;
+
       return s && p && c;
     });
   }, [staffTickets, state.filters.staffStatus, state.filters.staffPriority, state.filters.staffCategory]);

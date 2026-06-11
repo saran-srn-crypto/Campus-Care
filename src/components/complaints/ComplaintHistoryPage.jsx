@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Plus } from 'lucide-react';
+import { Plus, X } from 'lucide-react';
 import { useTickets } from '../../hooks/useTickets';
 import { useStudentComplaints } from '../../hooks/useStudentComplaints';
 import ComplaintStatsTabs from './ComplaintStatsTabs';
@@ -9,6 +9,8 @@ import ComplaintCard from './ComplaintCard';
 import ComplaintSkeleton from './ComplaintSkeleton';
 import ComplaintPagination from './ComplaintPagination';
 import EmptyComplaintsState from './EmptyComplaintsState';
+import StatusBadge from '../common/StatusBadge';
+import ComplaintDetailsPanel from './ComplaintDetailsPanel';
 
 const DEFAULT_FILTERS = {
   search: '',
@@ -58,6 +60,23 @@ export default function ComplaintHistoryPage() {
   }), [filters, page]);
 
   const { complaints, meta, statusCounts, loading, error, refetch } = useStudentComplaints(params);
+  const [selectedTicket, setSelectedTicket] = useState(null);
+
+  // Sync selectedTicket with complaints updates (e.g. status changes inside the modal)
+  const activeDetailTicket = useMemo(() => {
+    if (!selectedTicket) return null;
+    return complaints.find(t => t.id === selectedTicket.id) || selectedTicket;
+  }, [complaints, selectedTicket]);
+
+  // Handle auto-opening of the modal if search parameter matches exactly one ticket ID
+  useEffect(() => {
+    if (filters.search && complaints.length === 1) {
+      const match = complaints[0];
+      if (match.id.toLowerCase() === filters.search.trim().toLowerCase()) {
+        setSelectedTicket(match);
+      }
+    }
+  }, [filters.search, complaints]);
 
   const updateUrl = (next) => {
     const params = new URLSearchParams();
@@ -114,7 +133,13 @@ export default function ComplaintHistoryPage() {
           <ComplaintSkeleton count={4} />
         ) : complaints.length ? (
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 items-start">
-            {complaints.map(ticket => <ComplaintCard key={ticket.id} ticket={ticket} onUpdate={refetch} />)}
+            {complaints.map(ticket => (
+              <ComplaintCard
+                key={ticket.id}
+                ticket={ticket}
+                onViewDetails={() => setSelectedTicket(ticket)}
+              />
+            ))}
           </div>
         ) : (
           <EmptyComplaintsState onCreate={() => navigate('/student/raise-complaint')} />
@@ -139,6 +164,38 @@ export default function ComplaintHistoryPage() {
       >
         <Plus size={22} />
       </button>
+
+      {/* ─── Ticket Detail Pop-up Modal ─── */}
+      {activeDetailTicket && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-[fadeIn_0.2s_ease-out]" onClick={() => setSelectedTicket(null)}>
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+
+          {/* Modal */}
+          <article
+            className="relative w-full max-w-2xl max-h-[85vh] overflow-y-auto bg-white rounded-2xl shadow-2xl border border-line animate-[modalIn_0.25s_ease-out] custom-scrollbar"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Modal header */}
+            <div className="sticky top-0 z-10 flex items-start justify-between gap-3 p-5 pb-4 bg-white/95 backdrop-blur-sm border-b border-line">
+              <div className="flex-grow min-w-0">
+                <div className="flex items-center gap-2 flex-wrap mb-1">
+                  <code className="text-sm font-bold text-primary">{activeDetailTicket.id}</code>
+                  <StatusBadge value={activeDetailTicket.status} />
+                  <StatusBadge type="priority" value={activeDetailTicket.priority} />
+                </div>
+                <h2 className="m-0 text-lg font-bold leading-snug">{activeDetailTicket.title}</h2>
+              </div>
+              <button onClick={() => setSelectedTicket(null)} className="w-9 h-9 rounded-lg border border-line bg-white grid place-items-center hover:bg-surface-soft flex-shrink-0 transition-colors" aria-label="Close detail">
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Modal body */}
+            <ComplaintDetailsPanel ticket={activeDetailTicket} onUpdate={refetch} />
+          </article>
+        </div>
+      )}
     </div>
   );
 }

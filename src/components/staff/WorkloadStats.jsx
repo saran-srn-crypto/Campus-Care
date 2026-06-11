@@ -3,7 +3,9 @@ import { useAuth } from '../../hooks/useAuth';
 
 export default function WorkloadStats({ tickets }) {
   const { getProfile } = useAuth();
-  const staffName = getProfile().name;
+  const profile = getProfile();
+  const staffName = profile.name;
+  const staffId = profile.userId;
 
   // Compute counts per staff from provided tickets (excluding closed tickets)
   const { count, maxCount } = useMemo(() => {
@@ -11,13 +13,14 @@ export default function WorkloadStats({ tickets }) {
     tickets
       .filter(t => t.status !== 'Closed')
       .forEach(t => {
-        countsMap[t.assignee] = (countsMap[t.assignee] || 0) + 1;
+        const key = t.assignedStaff || t.assignee || 'Unassigned';
+        countsMap[key] = (countsMap[key] || 0) + 1;
       });
     const countsArray = Object.entries(countsMap).map(([name, cnt]) => ({ name, count: cnt }));
     const max = Math.max(...countsArray.map(i => i.count), 1);
-    const staffItem = countsArray.find(i => i.name === staffName) || { name: staffName, count: 0 };
+    const staffItem = countsArray.find(i => i.name === staffName || i.name === staffId) || { name: staffName, count: 0 };
     return { count: staffItem.count, maxCount: max };
-  }, [tickets, staffName]);
+  }, [tickets, staffName, staffId]);
 
   return (
     <article className="p-4.5 border border-line rounded-lg bg-white shadow-card">

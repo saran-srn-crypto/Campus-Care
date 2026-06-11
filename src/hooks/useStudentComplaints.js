@@ -10,15 +10,22 @@ const EMPTY_META = {
 };
 
 function buildCounts(items) {
-  const counts = { All: items.length, Open: 0, Assigned: 0, 'In Progress': 0, Resolved: 0, Closed: 0 };
+  const counts = { All: items.length, Pending: 0, Open: 0, Assigned: 0, 'In Progress': 0, Resolved: 0, Closed: 0 };
   items.forEach(item => {
-    if (Object.prototype.hasOwnProperty.call(counts, item.status)) counts[item.status] += 1;
+    const status = item.status;
+    if (Object.prototype.hasOwnProperty.call(counts, status)) {
+      counts[status] += 1;
+    }
+    if (['Open', 'Assigned', 'In Progress', 'Reopened', 'Pending Assignment'].some(s => s.toLowerCase() === (status || '').toLowerCase())) {
+      counts.Pending += 1;
+    }
   });
   return counts;
 }
 
 function normalizeResponse(data, page, size) {
   if (Array.isArray(data)) {
+    const statusCounts = buildCounts(data);
     return {
       complaints: data,
       meta: {
@@ -28,11 +35,19 @@ function normalizeResponse(data, page, size) {
         totalElements: data.length,
         last: true,
       },
-      statusCounts: buildCounts(data),
+      statusCounts,
     };
   }
 
   const content = data?.content || [];
+  const rawCounts = data?.statusCounts || buildCounts(content);
+  // Sum Open + Assigned + In Progress (and any Reopened/Pending Assignment if present in keys)
+  const pendingCount = (rawCounts.Open || 0) + (rawCounts.Assigned || 0) + (rawCounts['In Progress'] || 0) + (rawCounts.Reopened || 0) + (rawCounts['Pending Assignment'] || 0);
+  const statusCounts = {
+    ...rawCounts,
+    Pending: pendingCount,
+  };
+
   return {
     complaints: content,
     meta: {
@@ -42,7 +57,7 @@ function normalizeResponse(data, page, size) {
       totalElements: data?.totalElements ?? content.length,
       last: data?.last ?? true,
     },
-    statusCounts: data?.statusCounts || buildCounts(content),
+    statusCounts,
   };
 }
 

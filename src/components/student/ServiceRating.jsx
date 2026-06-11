@@ -7,11 +7,14 @@ export default function ServiceRating({ ticket }) {
   const { updateTicket, addTimelineEntry } = useTickets();
   const { addNotification, showToast } = useNotifications();
 
-  const handleRate = () => {
-    updateTicket(ticket.id, { rating: 5, status: 'Closed' });
-    addTimelineEntry(ticket.id, { title: 'Closed', date: 'Today', note: 'Student rated the service 5 out of 5.' });
-    addNotification(`Ticket ${ticket.id} closed`, 'Student confirmed the resolution and rated the service.');
-    showToast('Service rated and ticket closed.');
+  const handleRate = async () => {
+    try {
+      await updateTicket(ticket.id, { rating: 5, status: 'Closed' });
+      await addNotification(`Ticket ${ticket.id} closed`, 'Student confirmed the resolution and rated the service.');
+      showToast('Service rated and ticket closed.');
+    } catch (err) {
+      showToast(err.message || 'Failed to rate and close ticket.');
+    }
   };
 
   return <Button onClick={handleRate}>Rate Service</Button>;

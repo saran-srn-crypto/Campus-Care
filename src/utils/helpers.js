@@ -53,10 +53,25 @@ export function sortTicketsByNewest(tickets) {
 export function getStats(tickets) {
   return {
     total: tickets.length,
-    open: tickets.filter(t => ['Open', 'Reopened'].includes(t.status)).length,
-    pending: tickets.filter(t => ['Open', 'Assigned', 'In Progress', 'Reopened'].includes(t.status)).length,
-    resolved: tickets.filter(t => t.status === 'Resolved').length,
-    closed: tickets.filter(t => t.status === 'Closed').length,
-    urgent: tickets.filter(t => t.priority === 'Urgent').length,
+    open: tickets.filter(t => {
+      const status = (t.status || '').toLowerCase().replace(/_/g, ' ').trim();
+      return ['open', 'reopened', 'pending assignment'].includes(status);
+    }).length,
+    pending: tickets.filter(t => {
+      const status = (t.status || '').toLowerCase().replace(/_/g, ' ').trim();
+      return ['open', 'assigned', 'in progress', 'reopened', 'pending assignment'].includes(status);
+    }).length,
+    resolved: tickets.filter(t => {
+      const status = (t.status || '').toLowerCase().replace(/_/g, ' ').trim();
+      return status === 'resolved';
+    }).length,
+    closed: tickets.filter(t => {
+      const status = (t.status || '').toLowerCase().replace(/_/g, ' ').trim();
+      return status === 'closed';
+    }).length,
+    urgent: tickets.filter(t => {
+      const priority = (t.priority || '').toLowerCase().trim();
+      return priority === 'urgent';
+    }).length,
   };
 }

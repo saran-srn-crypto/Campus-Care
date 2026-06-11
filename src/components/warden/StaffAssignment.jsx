@@ -6,7 +6,7 @@ import Button from '../common/Button';
 export default function StaffAssignment({ ticket }) {
   const { state, updateTicket, addComment, addTimelineEntry } = useTickets();
   const { addNotification, showToast } = useNotifications();
-  const [staff, setStaff] = useState(ticket?.assignee || state.staffMembers[0] || '');
+  const [staff, setStaff] = useState(ticket?.assignedStaff || ticket?.assignee || state.staffMembers[0] || '');
   const [priority, setPriority] = useState(ticket?.priority || 'Low');
   const [remark, setRemark] = useState('');
   const [prevTicketId, setPrevTicketId] = useState(null);
@@ -15,33 +15,37 @@ export default function StaffAssignment({ ticket }) {
   useEffect(() => {
     if (ticket) {
       if (ticket.id !== prevTicketId) {
-        setStaff(ticket.assignee || state.staffMembers[0] || '');
+        setStaff(ticket.assignedStaff || ticket.assignee || state.staffMembers[0] || '');
         setPriority(ticket.priority || 'Low');
         setRemark('');
         setPrevTicketId(ticket.id);
       } else if (!staff && state.staffMembers.length > 0) {
-        setStaff(ticket.assignee || state.staffMembers[0] || '');
+        setStaff(ticket.assignedStaff || ticket.assignee || state.staffMembers[0] || '');
       }
     }
   }, [ticket, prevTicketId, state.staffMembers, staff]);
 
-  if (!ticket || ticket.status === 'Resolved' || ticket.status === 'Closed') {
+  const statusLower = (ticket?.status || '').toLowerCase();
+  if (!ticket || statusLower === 'resolved' || statusLower === 'closed') {
     return null;
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!staff) {
       showToast('Please select a staff member to assign.');
       return;
     }
     const note = remark.trim() || 'Assigned by hostel warden.';
-    updateTicket(ticket.id, { assignee: staff, status: 'Assigned', priority });
-    addTimelineEntry(ticket.id, { title: 'Ticket assigned & prioritized', date: 'Today', note: `${note} (Priority set to: ${priority})` });
-    addComment(ticket.id, { by: 'Ravi Iyer', role: 'Hostel Warden', text: `${note} [Priority: ${priority}]` });
-    addNotification(`Ticket ${ticket.id} assigned`, `${staff} has been assigned by the hostel warden with ${priority} priority.`);
-    showToast('Hostel ticket assigned.');
-    setRemark('');
+    try {
+      await updateTicket(ticket.id, { assignee: staff, status: 'Assigned', priority });
+      await addComment(ticket.id, { by: 'Ravi Iyer', role: 'Hostel Warden', text: `${note} [Priority: ${priority}]` });
+      await addNotification(`Ticket ${ticket.id} assigned`, `${staff} has been assigned by the hostel warden with ${priority} priority.`);
+      showToast('Hostel ticket assigned.');
+      setRemark('');
+    } catch (err) {
+      showToast(err.message || 'Failed to assign ticket.');
+    }
   };
 
   return (

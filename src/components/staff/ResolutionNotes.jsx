@@ -4,7 +4,16 @@ import { useNotifications } from '../../hooks/useNotifications';
 import Button from '../common/Button';
 
 export default function ResolutionNotes({ ticket }) {
-  const [status, setStatus] = useState(ticket.status);
+  const getNormalizedStatus = (rawStatus) => {
+    if (!rawStatus) return 'Assigned';
+    const s = rawStatus.toLowerCase().replace(/_/g, ' ').trim();
+    if (s === 'assigned') return 'Assigned';
+    if (s === 'in progress') return 'In Progress';
+    if (s === 'resolved') return 'Resolved';
+    return 'Assigned';
+  };
+
+  const [status, setStatus] = useState(() => getNormalizedStatus(ticket?.status));
   const [note, setNote] = useState('');
   const [proofImage, setProofImage] = useState(ticket.proofImage || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -14,7 +23,7 @@ export default function ResolutionNotes({ ticket }) {
 
   useEffect(() => {
     if (ticket) {
-      setStatus(ticket.status);
+      setStatus(getNormalizedStatus(ticket.status));
       setNote('');
       setProofImage(ticket.proofImage || '');
     }

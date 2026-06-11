@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Filter, Search, X } from 'lucide-react';
 
-const statuses = ['All', 'Open', 'Assigned', 'In Progress', 'Resolved', 'Closed'];
+const statuses = ['All', 'Pending', 'Open', 'Assigned', 'In Progress', 'Resolved', 'Closed'];
 const priorities = ['All', 'Low', 'Medium', 'High', 'Urgent'];
 const sorts = ['Latest', 'Oldest', 'Priority', 'Status'];
 

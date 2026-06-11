@@ -1,6 +1,6 @@
 import React from 'react';
 
-const tabs = ['All', 'Open', 'Assigned', 'In Progress', 'Resolved', 'Closed'];
+const tabs = ['All', 'Pending', 'Open', 'Assigned', 'In Progress', 'Resolved', 'Closed'];
 
 export default function ComplaintStatsTabs({ counts = {}, activeStatus, onChange }) {
   return (

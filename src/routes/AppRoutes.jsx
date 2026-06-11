@@ -56,7 +56,7 @@ export default function AppRoutes() {
         <Route path="complaints" element={<StudentComplaintsPage />} />
         <Route path="profile" element={<StudentProfilePage />} />
         <Route path="notifications" element={<NotificationsPage />} />
-        <Route path="tickets/:filter" element={<TicketListPage />} />
+        <Route path="tickets/:filter" element={<Navigate to="/student/complaints" replace />} />
       </Route>
 
       <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>

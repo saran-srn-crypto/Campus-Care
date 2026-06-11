@@ -263,6 +263,8 @@ function simulateRequest(method, originalPath, body = null, isBlob = false) {
     if (status && status !== 'All') {
       if (status === 'Active') {
         list = list.filter(t => ['Open', 'Assigned', 'In Progress', 'Reopened'].includes(t.status));
+      } else if (status === 'Pending') {
+        list = list.filter(t => ['Open', 'Assigned', 'In Progress', 'Reopened', 'Pending Assignment'].some(s => s.toLowerCase() === (t.status || '').toLowerCase()));
       } else {
         list = list.filter(t => t.status === status);
       }

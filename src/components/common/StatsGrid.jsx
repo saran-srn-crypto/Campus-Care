@@ -45,7 +45,7 @@ const cardConfig = [
 
 export default function StatsGrid({ stats, tickets }) {
   const { role } = useAuth();
-  const baseRoute = role === 'student' ? '/student/tickets' : '/dashboard/tickets';
+  const baseRoute = '/dashboard/tickets';
 
   // If tickets are provided, compute stats on the fly
   const derivedStats = tickets ? getStats(tickets) : {};
@@ -53,18 +53,34 @@ export default function StatsGrid({ stats, tickets }) {
 
   return (
     <section className="grid grid-cols-2 lg:grid-cols-4 gap-4" aria-label="Ticket statistics">
-      {cardConfig.map(c => (
-        <StatCard
-          key={c.key}
-          label={c.label}
-          count={data[c.key]}
-          icon={c.icon}
-          color={c.color}
-          bgColor={c.bgColor}
-          borderColor={c.borderColor}
-          navigateTo={`${baseRoute}/${c.filterKey}`}
-        />
-      ))}
+      {cardConfig.map(c => {
+        let route;
+        if (role === 'student') {
+          if (c.filterKey === 'all') {
+            route = '/student/complaints';
+          } else if (c.filterKey === 'urgent') {
+            route = '/student/complaints?priority=Urgent';
+          } else {
+            const capitalized = c.filterKey.charAt(0).toUpperCase() + c.filterKey.slice(1);
+            route = `/student/complaints?status=${capitalized}`;
+          }
+        } else {
+          route = `${baseRoute}/${c.filterKey}`;
+        }
+
+        return (
+          <StatCard
+            key={c.key}
+            label={c.label}
+            count={data[c.key]}
+            icon={c.icon}
+            color={c.color}
+            bgColor={c.bgColor}
+            borderColor={c.borderColor}
+            navigateTo={route}
+          />
+        );
+      })}
     </section>
   );
 }

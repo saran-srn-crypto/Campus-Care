@@ -9,11 +9,13 @@ import ImageModal from '../common/ImageModal';
 
 const progressSteps = ['Ticket Opened', 'Assigned', 'In Progress', 'Resolved', 'Closed'];
 const statusIndex = {
-  Open: 0,
-  Assigned: 1,
-  'In Progress': 2,
-  Resolved: 3,
-  Closed: 4,
+  open: 0,
+  reopened: 0,
+  'pending assignment': 0,
+  assigned: 1,
+  'in progress': 2,
+  resolved: 3,
+  closed: 4,
 };
 
 function getActivityTime(items, label) {
@@ -32,7 +34,7 @@ export default function ComplaintDetailsPanel({ ticket, onUpdate }) {
   const [reopenReason, setReopenReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const activeIndex = statusIndex[ticket.status] ?? 0;
+  const activeIndex = statusIndex[(ticket.status || '').toLowerCase().replace(/_/g, ' ').trim()] ?? 0;
   const timeline = ticket.timeline || [];
   const comments = ticket.comments || [];
   const activityLogs = ticket.ticketActivityLogs || [];
@@ -169,7 +171,7 @@ export default function ComplaintDetailsPanel({ ticket, onUpdate }) {
         )}
       </section>
 
-      {ticket.status === 'Resolved' && (
+      {(ticket.status || '').toLowerCase() === 'resolved' && (
         <section className="p-4 rounded-xl border border-[#b8c5d6] bg-surface-soft grid gap-3">
           <h4 className="m-0 font-extrabold text-[#175cd3] flex items-center gap-2">
             Feedback & Action Required
@@ -278,7 +280,7 @@ export default function ComplaintDetailsPanel({ ticket, onUpdate }) {
         </section>
       )}
 
-      {ticket.status === 'Closed' && (
+      {(ticket.status || '').toLowerCase() === 'closed' && (
         <section className="p-4 rounded-xl border border-line bg-surface-soft grid gap-3">
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div>

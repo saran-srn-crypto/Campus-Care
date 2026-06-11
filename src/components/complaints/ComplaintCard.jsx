@@ -1,11 +1,9 @@
-import React, { useState } from 'react';
-import { CalendarDays, ChevronDown, MapPin, UserRound } from 'lucide-react';
+import React from 'react';
+import { CalendarDays, MapPin, UserRound } from 'lucide-react';
 import StatusBadge from '../common/StatusBadge';
-import ComplaintDetailsPanel from './ComplaintDetailsPanel';
 import { formatDate } from '../../utils/helpers';
 
-export default function ComplaintCard({ ticket, onUpdate }) {
-  const [open, setOpen] = useState(false);
+export default function ComplaintCard({ ticket, onViewDetails }) {
   const assignedStaff = ticket.assignedStaff || ticket.assignee || 'Unassigned';
 
   return (
@@ -59,20 +57,12 @@ export default function ComplaintCard({ ticket, onUpdate }) {
 
         <button
           type="button"
-          onClick={() => setOpen(value => !value)}
-          aria-expanded={open}
+          onClick={onViewDetails}
           className="min-h-[40px] rounded-lg border border-[#b8c5d6] bg-white text-primary-dark px-3 py-2 font-extrabold hover:bg-surface-soft transition-colors flex items-center justify-center gap-1.5"
         >
           View Details
-          <ChevronDown size={16} className={open ? 'rotate-180 transition-transform' : 'transition-transform'} />
         </button>
       </div>
-
-      {open && (
-        <div className="border-t border-line animate-[slideDown_220ms_ease-out]">
-          <ComplaintDetailsPanel ticket={ticket} onUpdate={onUpdate} />
-        </div>
-      )}
     </article>
   );
 }

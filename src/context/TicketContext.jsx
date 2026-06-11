@@ -19,8 +19,8 @@ export function TicketProvider({ children }) {
 
   const updateState = useCallback((updater) => {
     setStateRaw(prev => {
-      const next = typeof updater === 'function' ? updater(prev) : { ...prev, ...updater };
-      return next;
+      const updated = typeof updater === 'function' ? updater(prev) : updater;
+      return { ...prev, ...updated };
     });
   }, []);
 

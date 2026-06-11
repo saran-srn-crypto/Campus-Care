@@ -9,12 +9,15 @@ export default function ClosureApproval({ ticket }) {
   const { addNotification, showToast } = useNotifications();
   const [showImagePreview, setShowImagePreview] = useState(false);
 
-  const handleApprove = () => {
-    if (ticket.status !== 'Resolved') { showToast('Only resolved tickets can be approved for closure.'); return; }
-    updateTicket(ticket.id, { status: 'Closed' });
-    addTimelineEntry(ticket.id, { title: 'Closure approved', date: 'Today', note: 'Hostel warden approved ticket closure.' });
-    addNotification(`Ticket ${ticket.id} closed`, 'Hostel warden approved the closure.');
-    showToast('Closure approved.');
+  const handleApprove = async () => {
+    if ((ticket?.status || '').toLowerCase() !== 'resolved') { showToast('Only resolved tickets can be approved for closure.'); return; }
+    try {
+      await updateTicket(ticket.id, { status: 'Closed' });
+      await addNotification(`Ticket ${ticket.id} closed`, 'Hostel warden approved the closure.');
+      showToast('Closure approved.');
+    } catch (err) {
+      showToast(err.message || 'Failed to approve closure.');
+    }
   };
 
   return (
@@ -41,8 +44,8 @@ export default function ClosureApproval({ ticket }) {
         <span className="text-xs text-muted italic">Technician has not uploaded any completion details yet.</span>
       )}
       <div className="flex gap-2.5">
-        <Button variant="secondary" onClick={handleApprove} disabled={ticket.status === 'Closed'}>
-          {ticket.status === 'Closed' ? 'Closed & Approved' : 'Approve Closure'}
+        <Button variant="secondary" onClick={handleApprove} disabled={(ticket?.status || '').toLowerCase() === 'closed'}>
+          {(ticket?.status || '').toLowerCase() === 'closed' ? 'Closed & Approved' : 'Approve Closure'}
         </Button>
       </div>
 

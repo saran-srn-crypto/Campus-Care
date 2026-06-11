@@ -28,9 +28,24 @@ const filterMeta = {
 
 function applyFilter(tickets, filterKey) {
   if (filterKey === 'all') return tickets;
-  if (filterKey === 'pending') return tickets.filter(t => ['Open', 'Assigned', 'In Progress', 'Reopened'].includes(t.status));
-  if (filterKey === 'resolved') return tickets.filter(t => t.status === 'Resolved');
-  if (filterKey === 'urgent') return tickets.filter(t => t.priority === 'Urgent');
+  if (filterKey === 'pending') {
+    return tickets.filter(t => {
+      const status = (t.status || '').toLowerCase().replace(/_/g, ' ').trim();
+      return ['open', 'assigned', 'in progress', 'reopened', 'pending assignment'].includes(status);
+    });
+  }
+  if (filterKey === 'resolved') {
+    return tickets.filter(t => {
+      const status = (t.status || '').toLowerCase().replace(/_/g, ' ').trim();
+      return status === 'resolved';
+    });
+  }
+  if (filterKey === 'urgent') {
+    return tickets.filter(t => {
+      const priority = (t.priority || '').toLowerCase().trim();
+      return priority === 'urgent';
+    });
+  }
   return tickets;
 }
 
@@ -59,8 +74,17 @@ export default function TicketListPage() {
 
   // Role-aware base tickets
   const roleTickets = useMemo(() => {
-    if (role === 'student') return state.tickets.filter(t => t.owner === profile.name || t.owner === profile.userId);
-    if (role === 'staff') return state.tickets.filter(t => t.assignee === profile.userId || t.assignee === profile.name);
+    if (role === 'student') {
+      return state.tickets.filter(t => t.owner === profile.name || t.owner === profile.userId);
+    }
+    if (role === 'staff') {
+      return state.tickets.filter(t => 
+        t.assignedStaffId === profile.userId ||
+        t.assignee === profile.userId ||
+        t.assignedStaff === profile.name ||
+        t.assignee === profile.name
+      );
+    }
     return state.tickets;
   }, [state.tickets, role, profile.name, profile.userId]);
 
@@ -72,9 +96,21 @@ export default function TicketListPage() {
   // Apply secondary filters + search
   const filtered = useMemo(() => {
     return primaryFiltered.filter(t => {
-      if (statusFilter !== 'All' && t.status !== statusFilter) return false;
-      if (priorityFilter !== 'All' && t.priority !== priorityFilter) return false;
-      if (categoryFilter !== 'All' && t.category !== categoryFilter) return false;
+      if (statusFilter !== 'All') {
+        const tStatus = (t.status || '').toLowerCase().replace(/_/g, ' ').trim();
+        const fStatus = statusFilter.toLowerCase().replace(/_/g, ' ').trim();
+        if (tStatus !== fStatus) return false;
+      }
+      if (priorityFilter !== 'All') {
+        const tPriority = (t.priority || '').toLowerCase().trim();
+        const fPriority = priorityFilter.toLowerCase().trim();
+        if (tPriority !== fPriority) return false;
+      }
+      if (categoryFilter !== 'All') {
+        const tCategory = (t.category || '').toLowerCase().trim();
+        const fCategory = categoryFilter.toLowerCase().trim();
+        if (tCategory !== fCategory) return false;
+      }
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
         if (
